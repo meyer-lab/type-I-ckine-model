@@ -7,7 +7,7 @@ import numpy as np
 from .model import runCkineU, nSpecies, runCkineU_IL2, getTotalActiveSpecies, receptor_expression
 from .imports import import_Rexpr, import_samples_2_15, import_pstat
 
-rxntfR, _ = import_samples_2_15(N=1, tensor=True)
+rxntfR, _ = import_samples_2_15(N=1)
 rxntfR = np.squeeze(rxntfR)
 
 

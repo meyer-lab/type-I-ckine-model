@@ -7,8 +7,6 @@ pytest
 hypothesis==4.28.2
 hypothesis-numpy==2.0.0
 tensorly==0.4.3
-Theano==1.0.4
-pymc3==3.7
 parameterized==0.7.0
 pytest-xdist
 pytest-cov

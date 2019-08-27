@@ -21,7 +21,7 @@ venv/bin/activate: requirements.txt
 
 $(fdir)/figure%.svg: venv genFigures.py ckine/ckine.so ckine/figures/figure%.py
 	mkdir -p ./Manuscript/Figures
-	. venv/bin/activate && THEANO_FLAGS='mode=FAST_COMPILE' ./genFigures.py $*
+	. venv/bin/activate && ./genFigures.py $*
 
 $(fdir)/figure%pdf: $(fdir)/figure%svg
 	rsvg-convert --keep-image-data -f pdf $< -o $@
@@ -68,7 +68,7 @@ test: venv ckine/ckine.so
 	. venv/bin/activate && pytest
 
 testcover: venv ckine/ckine.so
-	. venv/bin/activate && THEANO_FLAGS='mode=FAST_COMPILE' pytest --junitxml=junit.xml --cov-branch --cov=ckine --cov-report xml:coverage.xml
+	. venv/bin/activate && pytest --junitxml=junit.xml --cov-branch --cov=ckine --cov-report xml:coverage.xml
 
 testcpp: ckine/cppcheck
 	ckine/cppcheck

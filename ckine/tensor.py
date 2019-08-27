@@ -3,12 +3,9 @@ Analyze tensor from make_tensor.
 """
 import numpy as np
 import tensorly as tl
-from tensorly.decomposition import non_negative_parafac, non_negative_tucker
+from tensorly.decomposition import non_negative_parafac
 from tensorly.decomposition.candecomp_parafac import normalize_factors
 from tensorly.metrics.regression import variance as tl_var
-
-backend = 'numpy'  # Tensorly backend choice
-tl.set_backend(backend)  # Set the backend within every file that imports from Tensor_analysis.py
 
 
 def z_score_values(A, cell_dim):
@@ -33,17 +30,6 @@ def perform_decomposition(tensor, r, weightFactor=2):
     factors, weights = normalize_factors(factors)  # Position 0 is factors. 1 is weights.
     factors[weightFactor] *= weights[np.newaxis, :]  # Put weighting in designated factor
     return factors
-
-
-def perform_tucker(tensor, rank_list):
-    '''Function to peform tucker decomposition.'''
-    # index 0 is for core tensor, index 1 is for factors; out is a list of core and factors
-    return non_negative_tucker(tensor, rank_list, tol=1.0E-9, n_iter_max=10000)
-
-
-def find_R2X_tucker(values, out):
-    '''Compute R2X for the tucker decomposition.'''
-    return R2X(tl.tucker_to_tensor(out[0], out[1]), values)
 
 
 def find_R2X(values, factors):
