@@ -6,6 +6,7 @@ import string
 import numpy as np
 from .figureCommon import subplotLabel, getSetup
 from .figureB1 import runIL2simple
+from ..make_tensor import rxntfR
 
 
 def makeFigure():
@@ -38,7 +39,7 @@ titles = ["CD25+", "10% CD25+", "CD25-"]
 def ligandDeg_IL2(input_params, CD25):
     """ Calculate an IL2 degradation curve. """
     ILs = np.logspace(-4.0, 5.0)
-    ld = np.array([runIL2simple(input_params, ii, CD25, True) for ii in ILs])
+    ld = np.array([runIL2simple(rxntfR, input_params, ii, CD25, ligandDegradation=True) for ii in ILs])
     return ILs, ld
 
 

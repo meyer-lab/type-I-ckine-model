@@ -26,7 +26,7 @@ def makeFigure():
 def dRespon(input_params, CD25=1.0):
     """ Calculate an IL2 dose response curve. """
     ILs = np.logspace(-3.0, 3.0)
-    activee = np.array([runIL2simple(input_params, ii, CD25) for ii in ILs])
+    activee = np.array([runIL2simple(rxntfR, input_params, ii, CD25) for ii in ILs]).squeeze()
 
     return ILs, activee
 
@@ -98,27 +98,40 @@ def halfMax_IL2RbAff_highIL2Ra(ax):
     ax.legend(title="CD25 rel expr")
 
 
-def runIL2simple(input_params, IL, CD25=1.0, ligandDegradation=False):
+def runIL2simple(unkVec, input_params, IL, CD25=1.0, tps=None, input_receptors=None, adj_receptors=False, ligandDegradation=False):
     """ Version to focus on IL2Ra/Rb affinity adjustment. """
-    tps = np.array([500.0])
 
-    kfwd, k4rev, k5rev = rxntfR[6], rxntfR[7], rxntfR[8]
+    if tps is None:
+        tps = np.array([500.0])
+
+    kfwd, k4rev, k5rev = unkVec[6], unkVec[7], unkVec[8]
 
     k1rev = 0.6 * 10 * input_params[0]
     k2rev = 0.6 * 144 * input_params[1]
     k11rev = 63.0 * k5rev / 1.5 * input_params[1]
-    IL2Ra, IL2Rb, gc = rxntfR[22] * CD25, rxntfR[23], rxntfR[24]
+
+    if adj_receptors:
+        IL2Ra = input_receptors[0] * CD25
+        IL2Rb = input_receptors[1]
+        gc = input_receptors[2]
+    else:
+        IL2Ra, IL2Rb, gc = unkVec[22] * CD25, unkVec[23], unkVec[24]
 
     # IL, kfwd, k1rev, k2rev, k4rev, k5rev, k11rev, R, R, R
     rxntfr = np.array(
-        [IL, kfwd, k1rev, k2rev, k4rev, k5rev, k11rev, IL2Ra, IL2Rb, gc, k1rev * input_params[2], k2rev * input_params[2], k4rev * input_params[2], k5rev * input_params[2], k11rev * input_params[2]]
-    )
+        [IL, kfwd, k1rev, k2rev, k4rev, k5rev, k11rev, IL2Ra, IL2Rb, gc, k1rev * input_params[2], k2rev * input_params[2], k4rev * input_params[2], k5rev * input_params[2], k11rev * input_params[2]])
     # input_params[2] represents endosomal binding affinity relative to surface affinity
 
     yOut = runCkineU_IL2(tps, rxntfr)
 
     if ligandDegradation:
         # rate of ligand degradation
-        return ligandDeg(yOut[0], sortF=rxntfR[19], kDeg=rxntfR[21], cytokineIDX=0)
+        return ligandDeg(yOut[0], sortF=unkVec[19], kDeg=unkVec[21], cytokineIDX=0)
 
-    return getTotalActiveCytokine(0, np.squeeze(yOut))
+    active_ckine = np.zeros(yOut.shape[0])
+
+    # calculate for each time point
+    for i in range(yOut.shape[0]):
+        active_ckine[i] = getTotalActiveCytokine(0, yOut[i, :])
+
+    return active_ckine

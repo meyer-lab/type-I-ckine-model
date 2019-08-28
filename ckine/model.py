@@ -66,6 +66,7 @@ def runCkineU_IL2(tps, rxntfr):
     """ Standard version of solver that returns species abundances given times and unknown rates. """
     rxntfr = rxntfr.copy()
     assert rxntfr.size == 15
+    assert np.all(rxntfr >= 0.0)
 
     yOut = np.zeros((tps.size, __nSpecies), dtype=np.float64)
 

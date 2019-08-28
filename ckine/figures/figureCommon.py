@@ -195,12 +195,3 @@ def legend_2_15(ax, location="center right"):
                               markerfacecolor='k', markersize=16)]
     ax.legend(handles=legend_elements, loc=location, prop={'size': 16})
     ax.axis('off')  # remove the grid
-
-
-def plot_scaled_pstat(ax, cytokC, pstat):
-    """ Plots pSTAT5 data scaled by the average activity measurement. """
-    # plot pstat5 data for each time point
-    ax.scatter(cytokC, pstat[0, :], c="indigo", s=2)  # 0.5 hr
-    ax.scatter(cytokC, pstat[1, :], c="teal", s=2)  # 1 hr
-    ax.scatter(cytokC, pstat[2, :], c="forestgreen", s=2)  # 2 hr
-    ax.scatter(cytokC, pstat[3, :], c="darkred", s=2)  # 4 hr

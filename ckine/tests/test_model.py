@@ -269,10 +269,11 @@ class TestModel(unittest.TestCase):
 
     def test_IL2_endo_binding(self):
         """ Make sure that the runIL2simple works and that increasing the endosomal reverse reaction rates causes tighter binding (less ligand degradation). """
+        rxntfR = self.rxntfR.copy()
         inp_normal = np.array([1.0, 1.0, 5.0])
         inp_tight = np.array([1.0, 1.0, 1.0])  # lower reverse rates in the endosome
 
-        out_norm = runIL2simple(inp_normal, 1.0, ligandDegradation=True)
-        out_tight = runIL2simple(inp_tight, 1.0, ligandDegradation=True)
+        out_norm = runIL2simple(rxntfR, inp_normal, 1.0, ligandDegradation=True)
+        out_tight = runIL2simple(rxntfR, inp_tight, 1.0, ligandDegradation=True)
 
         self.assertLess(out_tight, out_norm)  # tighter binding will have a lower rate of ligand degradation since all free ligand is degraded

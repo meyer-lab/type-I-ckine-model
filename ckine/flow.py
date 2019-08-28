@@ -125,7 +125,7 @@ def tcells(sample_i, treg_gate, nonTreg_gate, i):
     nonTreg_cells = smpl.gate(nonTreg_gate)
 
     # Declare figure and axis
-    _, ax = plt.subplots() # ???????? unused fig, but need to leave there to make sure right assignment for ax?
+    _, ax = plt.subplots()  # ???????? unused fig, but need to leave there to make sure right assignment for ax?
     # Plot the treg gate
     treg_cells.plot(["BL1-H", "VL1-H"], color="y")
     # Plot the non Treg gate
@@ -296,6 +296,7 @@ def pcaPlt(xf, pstat, features, i):
     # This is the scatter plot of the cell clusters colored by pSTAT5 data
     # lighter --> darker = less --> more pSTAT5 present
     plt.scatter(x, y, s=0.1, c=np.squeeze(pstat_data), cmap="Greens")
+
 
 def loadingPlot(loading, features, i):
     """Plot the loading data"""

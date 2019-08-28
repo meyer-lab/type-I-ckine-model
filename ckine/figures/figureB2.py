@@ -5,6 +5,7 @@ import string
 import numpy as np
 from .figureCommon import subplotLabel, getSetup
 from .figureB1 import runIL2simple
+from ..make_tensor import rxntfR
 
 
 def makeFigure():
@@ -37,7 +38,7 @@ titles = ["CD25+", "10% CD25+", "CD25-"]
 def dRespon_loc(input_params, CD25):  # same as dRespon except with different ILs range
     """ Calculate an IL2 dose response curve. """
     ILs = np.logspace(-4.0, 3.0)
-    activee = np.array([runIL2simple(input_params, ii, CD25) for ii in ILs])
+    activee = np.array([runIL2simple(rxntfR, input_params, ii, CD25) for ii in ILs])
     return ILs, activee
 
 
