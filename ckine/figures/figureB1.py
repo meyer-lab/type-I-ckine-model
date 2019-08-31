@@ -3,6 +3,7 @@ This creates Figure 1.
 """
 import string
 import numpy as np
+from scipy.optimize import brenth
 from .figureCommon import subplotLabel, getSetup
 from ..model import runCkineU_IL2, ligandDeg, getTotalActiveCytokine
 from ..make_tensor import rxntfR
@@ -31,9 +32,11 @@ def dRespon(input_params, CD25=1.0):
     return ILs, activee
 
 
-def IC50global(x, y):
+def IC50global(input_params, CD25=1.0):
     """ Calculate half-maximal concentration w.r.t. wt. """
-    return np.interp(20.0, y, x)
+    halfResponse = 20.0
+
+    return brenth(lambda x: runIL2simple(rxntfR, input_params, x, CD25) - halfResponse, 0, 1000.0, rtol=1e-5)
 
 
 changesA = np.logspace(-1, 1.5, num=20)
@@ -47,8 +50,7 @@ def halfMax_IL2RaAff(ax):
     changesB_a = np.array([1.0, 2.0, 5.0, 10.0, 20.0])
     for i, itemA in enumerate(changesA_a):
         for j, itemB in enumerate(changesB_a):
-            ILs, BB = dRespon([itemA, itemB, 5.0])
-            output[i, j] = IC50global(ILs, BB)
+            output[i, j] = IC50global([itemA, itemB, 5.0])
     for ii in range(output.shape[1]):
         ax.loglog(changesA_a, output[:, ii], label=str(changesB_a[ii]))
     ax.loglog([0.01, 10.0], [0.17, 0.17], "k-")
@@ -71,8 +73,7 @@ def halfMax_IL2RbAff(ax):
     """ Plots half maximal IL2 concentration across decreasing IL2Rb affinity for varied IL2Ra expression levels using wild type IL2Ra affinity. """
     for i, itemA in enumerate(changesA):
         for j, itemB in enumerate(changesB):
-            ILs, BB = dRespon([1.0, itemA, 5.0], CD25=itemB)
-            output[i, j] = IC50global(ILs, BB)
+            output[i, j] = IC50global([1.0, itemA, 5.0], CD25=itemB)
 
     for ii in range(output.shape[1]):
         ax.loglog(changesA, output[:, ii], label=str(changesB[ii]))
@@ -87,8 +88,7 @@ def halfMax_IL2RbAff_highIL2Ra(ax):
     increased IL2Ra affinity. """
     for i, itemA in enumerate(changesA):
         for j, itemB in enumerate(changesB):
-            ILs, BB = dRespon([0.1, itemA, 5.0], CD25=itemB)
-            output[i, j] = IC50global(ILs, BB)
+            output[i, j] = IC50global([0.1, itemA, 5.0], CD25=itemB)
 
     for ii in range(output.shape[1]):
         ax.loglog(changesA, output[:, ii], label=str(changesB[ii]))
@@ -119,7 +119,8 @@ def runIL2simple(unkVec, input_params, IL, CD25=1.0, tps=None, input_receptors=N
 
     # IL, kfwd, k1rev, k2rev, k4rev, k5rev, k11rev, R, R, R
     rxntfr = np.array(
-        [IL, kfwd, k1rev, k2rev, k4rev, k5rev, k11rev, IL2Ra, IL2Rb, gc, k1rev * input_params[2], k2rev * input_params[2], k4rev * input_params[2], k5rev * input_params[2], k11rev * input_params[2]])
+        [IL, kfwd, k1rev, k2rev, k4rev, k5rev, k11rev, IL2Ra, IL2Rb, gc, k1rev * input_params[2], k2rev * input_params[2], k4rev * input_params[2], k5rev * input_params[2], k11rev * input_params[2]]
+    )
     # input_params[2] represents endosomal binding affinity relative to surface affinity
 
     yOut = runCkineU_IL2(tps, rxntfr)
