@@ -6,7 +6,7 @@ import numpy as np
 import seaborn as sns
 import matplotlib.cm as cm
 from .figureCommon import subplotLabel, getSetup
-from .figureB6 import calc_dose_response_mutein, plot_dose_response
+from .figureB6 import calc_dose_response_mutein, plot_dose_response, mutaff
 from ..model import receptor_expression
 from ..imports import import_muteins, import_Rexpr, import_samples_2_15
 
@@ -49,7 +49,7 @@ def makeFigure():
             gc = data.loc[(data["Cell Type"] == cell_name) & (data["Receptor"] == '$\\gamma_{c}$'), "Count"].item()
             for l in range(unkVec.shape[1]):
                 cell_receptors = receptor_expression(np.array([IL2Ra, IL2Rb, gc]).astype(np.float), unkVec[17, l], unkVec[20, l], unkVec[19, l], unkVec[21, l])
-                pred_data[:, :, l] = calc_dose_response_mutein(unkVec[:, l], [1., 1., 5.], tps, muteinC, cell_receptors, exp_data)
+                pred_data[:, :, l] = calc_dose_response_mutein(unkVec[:, l], mutaff[ligand_name], tps, muteinC, cell_receptors, exp_data)
 
             # plot experimental and predicted date with a legend for the last subplot
             axis = i * 8 + j

@@ -18,6 +18,13 @@ data.reset_index(inplace=True)
 unkVec_2_15, _ = import_samples_2_15(N=100)
 
 
+mutaff = {
+    "IL2-060": [1., 1., 5.], # Wild-type, but dimer
+    "IL2-062": [1., 100., 5.], # Weaker b-g
+    "IL2-088": [10., 1., 5.], # Weaker CD25
+    "IL2-097": [10., 100., 5.] # Both
+}
+
 def makeFigure():
     """Get a list of the axis objects and create a figure"""
     # Get list of axis objects
@@ -50,7 +57,7 @@ def makeFigure():
             gc = data.loc[(data["Cell Type"] == cell_name) & (data["Receptor"] == '$\\gamma_{c}$'), "Count"].item()
             for l in range(unkVec_2_15.shape[1]):
                 cell_receptors = receptor_expression(np.array([IL2Ra, IL2Rb, gc]).astype(np.float), unkVec_2_15[17, l], unkVec_2_15[20, l], unkVec_2_15[19, l], unkVec_2_15[21, l])
-                pred_data[:, :, l] = calc_dose_response_mutein(unkVec_2_15[:, l], [1., 1., 5.], tps, muteinC, cell_receptors, exp_data)
+                pred_data[:, :, l] = calc_dose_response_mutein(unkVec_2_15[:, l], mutaff[ligand_name], tps, muteinC, cell_receptors, exp_data)
 
             # plot experimental and predicted date with a legend for the last subplot
             axis = i * 8 + j
