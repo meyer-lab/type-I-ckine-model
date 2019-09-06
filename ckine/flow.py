@@ -8,7 +8,7 @@ import seaborn as sns
 from matplotlib import pyplot as plt
 from FlowCytometryTools import FCMeasurement
 from FlowCytometryTools import QuadGate, ThresholdGate
-import sklearn
+from sklearn import preprocessing
 from sklearn.decomposition import PCA
 
 
@@ -269,22 +269,38 @@ def sampleNK(smpl):
     return data, pstat, features
 
 
-def appPCA(data, features):
-    """Applies the PCA algorithm to the data set"""
+def fitPCA(data, features):
+    """
+    Fits the PCA model to data, and returns the fit PCA model for future transformations
+    (allows for consistent loadings plots between wells)
+    """
     # Apply PCA to the data set
     # setting values of data of selected features to data frame
     xi = data.loc[:, features].values
     # STANDARDIZE DATA --> very important to do before applying machine learning algorithm
-    xs = sklearn.preprocessing.scale(xi)
+    scaler = preprocessing.StandardScaler()
+    xs = scaler.fit_transform(xi)
     xs = np.nan_to_num(xs)
     # setting how many components wanted --> PC1 and PC2
     pca = PCA(n_components=2)
     # apply PCA to standardized data set
-    # NOTE: score == xf
-    xf = pca.fit(xs).transform(xs)
+    PCAobj = pca.fit(xs)
     # creates the loading array (equation is defintion of loading)
     loading = pca.components_.T
-    return xf, loading
+    return PCAobj, loading
+
+
+def appPCA(data, features, PCAobj):
+    """Applies the PCA algorithm to the data set"""
+    # setting values of data of selected features to data frame
+    xi = data.loc[:, features].values
+    # STANDARDIZE DATA --> very important to do before applying machine learning algorithm
+    scaler = preprocessing.StandardScaler()
+    xs = scaler.fit_transform(xi)
+    xs = np.nan_to_num(xs)
+    # transform to the prefit pca object
+    xf = PCAobj.transform(xs)
+    return xf
 
 
 def pcaPlt(xf, pstat, features, title, tplate=True):
@@ -319,10 +335,10 @@ def pcaPlt(xf, pstat, features, title, tplate=True):
     plt.xlim(-4, 6)
     plt.ylim(-4, 4)
     if tplate:
-        sns.scatterplot(x="PC1", y="PC2", hue ="pSTAT5", palette="viridis", data=df, s=10, ax=ax, legend=False, hue_norm=(3000, 7000))
+        sns.scatterplot(x="PC1", y="PC2", hue="pSTAT5", palette="viridis", data=df, s=10, ax=ax, legend=False, hue_norm=(3000, 7000))
         points = plt.scatter(df["PC1"], df["PC2"], c=df["pSTAT5"], s=0, cmap="viridis", vmin=3000, vmax=7000) #set style options
     else:
-        sns.scatterplot(x="PC1", y="PC2", hue ="pSTAT5", palette="viridis", data=df, s=10, ax=ax, legend=False, hue_norm=(0, 5000))
+        sns.scatterplot(x="PC1", y="PC2", hue="pSTAT5", palette="viridis", data=df, s=10, ax=ax, legend=False, hue_norm=(0, 5000))
         points = plt.scatter(df["PC1"], df["PC2"], c=df["pSTAT5"], s=0, cmap="viridis", vmin=0, vmax=5000) #set style options
     ax.set_xlabel("PC1", fontsize=15)
     ax.set_ylabel("PC2", fontsize=15)
@@ -381,7 +397,6 @@ def pcaAll(sampleType, check, titles):
     data_array = []
     pstat_array = []
     xf_array = []
-    loading_array = []
     # create the for loop to file through the data and save to the arrays
     # using the functions created above for a singular file
     if check == "t":
@@ -391,9 +406,10 @@ def pcaAll(sampleType, check, titles):
             data, pstat, features = sampleT(sample)
             data_array.append(data)
             pstat_array.append(pstat)
-            xf, loading = appPCA(data, features)
+            if i == 0:
+                PCAobj, loading = fitPCA(data, features)
+            xf = appPCA(data, features, PCAobj)
             xf_array.append(xf)
-            loading_array.append(loading)
             pcaPlt(xf, pstat, features, title, tplate=True)
             loadingPlot(loading, features, i, title)
             plt.show()
@@ -404,11 +420,13 @@ def pcaAll(sampleType, check, titles):
             data, pstat, features = sampleNK(sample)
             data_array.append(data)
             pstat_array.append(pstat)
-            xf, loading = appPCA(data, features)
+            if i == 0:
+                PCAobj, loading = fitPCA(data, features)
+            xf = appPCA(data, features, PCAobj)
             pcaPlt(xf, pstat, features, title, tplate=False)
             loadingPlot(loading, features, i, title)
             plt.show()
-    return data_array, pstat_array, xf_array, loading_array
+    return data_array, pstat_array, xf_array
 
 #************************PCA by color (gating+PCA)******************************
 
@@ -530,7 +548,9 @@ def pcaAllCellType(sampleType, check, titles):
             data, pstat, features, colormat = sampleTcolor(sample)
             data_array.append(data)
             pstat_array.append(pstat)
-            xf, loading = appPCA(data, features)
+            if i == 0:
+                PCAobj, loading = fitPCA(data, features)
+            xf = appPCA(data, features, PCAobj)
             xf_array.append(xf)
             loading_array.append(loading)
             pcaPltColor(xf, pstat, features, title, colormat) #changed
@@ -542,8 +562,41 @@ def pcaAllCellType(sampleType, check, titles):
             data, pstat, features, colormat = sampleNKcolor(sample)
             data_array.append(data)
             pstat_array.append(pstat)
-            xf, loading = appPCA(data, features)
+            if i == 0:
+                PCAobj, loading = fitPCA(data, features)
+            xf = appPCA(data, features, PCAobj)
             pcaPltColor(xf, pstat, features, title, colormat)
             loadingPlot(loading, features, i, title)
     plt.show()
     return data_array, pstat_array, xf_array, loading_array
+
+#************************Dose Response by PCA******************************
+
+def PCADoseResponse(sampleType, PC1Bnds, PC2Bnds, Timepoint):
+    """ Given data from a time Point and two PC bounds, the dose response curve will be calculated and graphed (needs folder with FCS from one time point)"""
+    dosemat = np.array([84, 28, 9.333333, 3.111, 1.037037, 0.345679, 0.115226, 0.038409, 0.012803, 0.004268, 0.001423, 0.000474])
+    Pstatvals = []
+
+    for i, sample in enumerate(sampleType):
+        data, pstat, features = sampleT(sample) #retrieve data
+        if i == 0:
+            PCAobj, _ = fitPCA(data, features) #only fit to first set
+        xf = appPCA(data, features, PCAobj) #get PC1/2 vals
+        PC1, PC2, pstat = np.transpose(xf[:, 0]), np.transpose(xf[:, 1]), pstat.to_numpy()
+        PC1, PC2 = np.reshape(PC1, (PC1.size, 1)), np.reshape(PC2, (PC2.size, 1))
+        PCAstat = np.concatenate((PC1, PC2, pstat), axis=1)
+        PCApd = pd.DataFrame({'PC1': PCAstat[:, 0], 'PC2': PCAstat[:, 1], 'Pstat': PCAstat[:, 2]}) #arrange into pandas datafrome
+        PCApd = PCApd[PCApd['PC1'] >= PC1Bnds[0]] #remove data that that is not within given PC bounds
+        PCApd = PCApd[PCApd['PC1'] <= PC1Bnds[1]]
+        PCApd = PCApd[PCApd['PC2'] >= PC2Bnds[0]]
+        PCApd = PCApd[PCApd['PC2'] <= PC2Bnds[1]]
+        Pstatvals.append(PCApd.loc[:, "Pstat"].mean()) #take average Pstat activity of data fitting criteria
+
+    _, ax = plt.subplots(figsize=(8, 8))
+    plt.scatter(dosemat, Pstatvals)
+    ax.set_title(Timepoint + " PCA Gated Dose Response Curve", fontsize=20)
+    ax.set_xscale('log')
+    ax.set_xlabel("Cytokine Dosage (log10[nM])", fontsize=15)
+    ax.set_ylabel("Average Pstat Activity", fontsize=15)
+    ax.set(xlim=(0.0001, 100))
+    plt.show()
