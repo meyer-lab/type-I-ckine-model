@@ -3,7 +3,7 @@ This creates Figure 1.
 """
 import string
 import numpy as np
-from scipy.optimize import brenth
+from scipy.optimize import brentq
 from .figureCommon import subplotLabel, getSetup
 from ..model import runCkineU_IL2, ligandDeg, getTotalActiveCytokine
 from ..make_tensor import rxntfR
@@ -36,7 +36,7 @@ def IC50global(input_params, CD25=1.0):
     """ Calculate half-maximal concentration w.r.t. wt. """
     halfResponse = 20.0
 
-    return brenth(lambda x: runIL2simple(rxntfR, input_params, x, CD25) - halfResponse, 0, 1000.0, rtol=1e-5)
+    return brentq(lambda x: runIL2simple(rxntfR, input_params, x, CD25) - halfResponse, 0, 1000.0, rtol=1e-5)
 
 
 changesA = np.logspace(-1, 1.5, num=20)
