@@ -57,10 +57,10 @@ def makeFigure():
         for _, ligand_name in enumerate(ligand_order):
 
             # append dataframe with experimental and predicted activity
-            df = organize_expr_pred(df, cell_name, ligand_name, receptors, muteinC, tps)
+            df = organize_expr_pred(df, cell_name, ligand_name, receptors, muteinC, tps, unkVec_2_15)
 
     # determine scaling constants
-    scales = mutein_scaling(df)
+    scales = mutein_scaling(df, unkVec_2_15)
 
     plot_expr_pred(ax, df, scales, cell_order, ligand_order, tps, muteinC)
 
@@ -104,7 +104,7 @@ def plot_expr_pred(ax, df, scales, cell_order, ligand_order, tps, muteinC):
             ax[axis].set(xlabel=("[" + ligand_name + "] (log$_{10}$[nM])"), ylabel="Activity", title=cell_name)
 
 
-def organize_expr_pred(df, cell_name, ligand_name, receptors, muteinC, tps):
+def organize_expr_pred(df, cell_name, ligand_name, receptors, muteinC, tps, unkVec):
     """ Appends dataframe with experimental and predicted activity for a given cell type and mutein. """
 
     num = len(tps) * len(muteinC)
@@ -120,10 +120,10 @@ def organize_expr_pred(df, cell_name, ligand_name, receptors, muteinC, tps):
     df = df.append(df_exp, ignore_index=True)
 
     # calculate predicted dose response
-    pred_data = np.zeros((12, 4, unkVec_2_15.shape[1]))
-    for j in range(unkVec_2_15.shape[1]):
-        cell_receptors = receptor_expression(receptors, unkVec_2_15[17, j], unkVec_2_15[20, j], unkVec_2_15[19, j], unkVec_2_15[21, j])
-        pred_data[:, :, j] = calc_dose_response_mutein(unkVec_2_15[:, j], mutaff[ligand_name], tps, muteinC, cell_receptors)
+    pred_data = np.zeros((12, 4, unkVec.shape[1]))
+    for j in range(unkVec.shape[1]):
+        cell_receptors = receptor_expression(receptors, unkVec[17, j], unkVec[20, j], unkVec[19, j], unkVec[21, j])
+        pred_data[:, :, j] = calc_dose_response_mutein(unkVec[:, j], mutaff[ligand_name], tps, muteinC, cell_receptors)
         df_pred = pd.DataFrame({'Cells': np.tile(np.array(cell_name), num), 'Ligand': np.tile(np.array(ligand_name), num), 'Time Point': np.tile(
             tps, 12), 'Concentration': mutein_conc.reshape(num,), 'Activity Type': np.tile(np.array('predicted'), num), 'Replicate': np.tile(np.array(j + 1), num), 'Activity': pred_data[:, :, j].reshape(num,)})
         df = df.append(df_pred, ignore_index=True)
@@ -131,14 +131,14 @@ def organize_expr_pred(df, cell_name, ligand_name, receptors, muteinC, tps):
     return df
 
 
-def mutein_scaling(df):
+def mutein_scaling(df, unkVec):
     """ Determines scaling parameters for specified cell groups for across all muteins. """
 
     cell_groups = [['T-reg', 'Mem Treg', 'Naive Treg'], ['T-helper', 'Mem Th', 'Naive Th'], ['NK'], ['CD8+']]
 
-    scales = np.zeros((4, 2, unkVec_2_15.shape[1]))
+    scales = np.zeros((4, 2, unkVec.shape[1]))
     for i, cells in enumerate(cell_groups):
-        for j in range(unkVec_2_15.shape[1]):
+        for j in range(unkVec.shape[1]):
             subset_df = df[df['Cells'].isin(cells)]
             scales[i, :, j] = optimize_scale(np.array(subset_df.loc[(subset_df["Activity Type"] == 'predicted') & (subset_df["Replicate"] == (j + 1)), "Activity"]),
                                              np.array(subset_df.loc[(subset_df["Activity Type"] == 'experimental'), "Activity"]))
