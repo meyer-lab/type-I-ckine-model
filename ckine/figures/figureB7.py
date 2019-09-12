@@ -6,8 +6,6 @@ import string
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import matplotlib.lines as mlines
-import matplotlib.patches as mpatches
 from scipy.optimize import least_squares
 from .figureCommon import subplotLabel, getSetup
 from .figureB6 import organize_expr_pred, mutein_scaling
@@ -21,18 +19,11 @@ unkVec_2_15, _ = import_samples_2_15(N=1)  # use one rate
 muteinC = dataMean.Concentration.unique()
 tps = np.array([0.5, 1., 2., 4.]) * 60.
 
-mutaff = {
-    "IL2-060": [1., 1., 5.],  # Wild-type, but dimer
-    "IL2-062": [1., 100., 5.],  # Weaker b-g
-    "IL2-088": [10., 1., 5.],  # Weaker CD25
-    "IL2-097": [10., 100., 5.]  # Both
-}
-
 
 def makeFigure():
     """Get a list of the axis objects and create a figure"""
     # Get list of axis objects
-    ax, f = getSetup((7, 6), (4, 1))
+    ax, f = getSetup((7, 6), (2, 2))
 
     for ii, item in enumerate(ax):
         subplotLabel(item, string.ascii_uppercase[ii])
@@ -45,9 +36,9 @@ def makeFigure():
     # loop for each cell type and mutein
     for _, cell_name in enumerate(cell_order):
 
-        IL2Ra = data.loc[(data["Cell Type"] == cell_name) & (data["Receptor"] == 'IL-2R$\\alpha$'), "Count"].item()
-        IL2Rb = data.loc[(data["Cell Type"] == cell_name) & (data["Receptor"] == 'IL-2R$\\beta$'), "Count"].item()
-        gc = data.loc[(data["Cell Type"] == cell_name) & (data["Receptor"] == '$\\gamma_{c}$'), "Count"].item()
+        IL2Ra = data.loc[(data["Cell Type"] == cell_name) & (data["Receptor"] == 'IL-2R$\\alpha$'), "Count"].values[0]
+        IL2Rb = data.loc[(data["Cell Type"] == cell_name) & (data["Receptor"] == 'IL-2R$\\beta$'), "Count"].values[0]
+        gc = data.loc[(data["Cell Type"] == cell_name) & (data["Receptor"] == '$\\gamma_{c}$'), "Count"].values[0]
         receptors = np.array([IL2Ra, IL2Rb, gc]).astype(np.float)
 
         for _, ligand_name in enumerate(ligand_order):
@@ -70,40 +61,24 @@ def makeFigure():
 
 def catplot_comparison(ax, df, tp):
     """ Construct EC50 catplots for given time point. """
-    # make subset dataframe without points where least squares fails
-    subset_df = df[df['EC-50'] < 1.9]
 
-    # plot predicted EC50
-    sns.catplot(x="Cell Type", y="EC-50", hue="Mutein",
-                data=subset_df.loc[(subset_df['Time Point'] == tp) & (subset_df["Data Type"] == 'Predicted')],
-                legend=False, ax=ax, marker='^')
+    df = df.copy()
+    df['EC-50'] += 3.0
+    subset_df = df.loc[(df['Time Point'] == tp)]
+    subset_df = subset_df.loc[(subset_df["Cell Type"] == 'T-reg')]
 
-    # plot experimental EC50
-    sns.catplot(x="Cell Type", y="EC-50", hue="Mutein",
-                data=subset_df.loc[(subset_df['Time Point'] == tp) & (subset_df["Data Type"] == 'Experimental')],
-                legend=False, ax=ax, marker='o')
+    sns.barplot(x="Mutein", y="EC-50", hue="Data Type", data=subset_df, ax=ax)
 
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=35, rotation_mode="anchor", ha="right", position=(0, 0.02))
-    ax.set_xlabel("")  # remove "Cell Type" from xlabel
-    ax.set_ylabel(r"EC-50 (log$_{10}$[nM])")
+    #ax.set_xticklabels(ax.get_xticklabels(), rotation=35, rotation_mode="anchor", ha="right", position=(0, 0.02))
+    ax.set_ylabel(r"EC-50 (log$_{10}$[pM])")
     ax.set_title(str(tp / 60.) + " hours")
-
-    # set manual legend
-    ax.get_legend().remove()
-    palette = sns.color_palette().as_hex()
-    blue = mpatches.Patch(color=palette[0], label='IL2-060')
-    yellow = mpatches.Patch(color=palette[1], label='IL2-062')
-    green = mpatches.Patch(color=palette[2], label='IL2-088')
-    red = mpatches.Patch(color=palette[3], label='IL2-097')
-    circle = mlines.Line2D([], [], color='black', marker='o', linestyle='None', markersize=6, label='Experimental')
-    triangle = mlines.Line2D([], [], color='black', marker='^', linestyle='None', markersize=6, label='Predicted')
-    ax.legend(handles=[blue, yellow, green, red, circle, triangle], bbox_to_anchor=(1.02, 1), loc="upper left")
+    ax.set_ylim(0.0, 3.0)
 
 
 def calculate_EC50s(df, scales, cell_order, ligand_order):
     """ Scales model predictions to experimental data, then calculates EC-50 for all cell types, muteins, and time points. """
 
-    x0 = [1, 2., 1000.]
+    x0 = [100.0, 1.0, 9000.0]
     data_types = []
     cell_types = []
     mutein_types = []
@@ -145,7 +120,7 @@ def calculate_EC50s(df, scales, cell_order, ligand_order):
 
 def nllsq_EC50(x0, xdata, ydata):
     """ Performs nonlinear least squares on activity measurements to determine parameters of Hill equation and outputs EC50. """
-    lsq_res = least_squares(residuals, x0, args=(xdata, ydata), bounds=([0., 0., 0.], [10**2., 10**2., 10**16]), jac='3-point')
+    lsq_res = least_squares(residuals, x0, args=(xdata, ydata), bounds=([0., 0., 6000.], [10**6., 10**2., 10**9]), jac='3-point')
     return lsq_res.x[0]
 
 

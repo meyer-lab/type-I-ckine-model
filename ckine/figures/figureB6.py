@@ -20,9 +20,9 @@ unkVec_2_15, _ = import_samples_2_15(N=5)
 
 mutaff = {
     "IL2-060": [1., 1., 5.],  # Wild-type, but dimer
-    "IL2-062": [1., 20., 5.],  # Weaker b-g
+    "IL2-062": [1., 15., 5.],  # Weaker b-g
     "IL2-088": [13., 1., 5.],  # Weaker CD25
-    "IL2-097": [13., 20., 5.]  # Both
+    "IL2-097": [13., 15., 5.]  # Both
 }
 
 
@@ -49,9 +49,9 @@ def makeFigure():
     # loop for each cell type and mutein
     for _, cell_name in enumerate(cell_order):
 
-        IL2Ra = data.loc[(data["Cell Type"] == cell_name) & (data["Receptor"] == 'IL-2R$\\alpha$'), "Count"].item()
-        IL2Rb = data.loc[(data["Cell Type"] == cell_name) & (data["Receptor"] == 'IL-2R$\\beta$'), "Count"].item()
-        gc = data.loc[(data["Cell Type"] == cell_name) & (data["Receptor"] == '$\\gamma_{c}$'), "Count"].item()
+        IL2Ra = data.loc[(data["Cell Type"] == cell_name) & (data["Receptor"] == 'IL-2R$\\alpha$'), "Count"].values[0]
+        IL2Rb = data.loc[(data["Cell Type"] == cell_name) & (data["Receptor"] == 'IL-2R$\\beta$'), "Count"].values[0]
+        gc = data.loc[(data["Cell Type"] == cell_name) & (data["Receptor"] == '$\\gamma_{c}$'), "Count"].values[0]
         receptors = np.array([IL2Ra, IL2Rb, gc]).astype(np.float)
 
         for _, ligand_name in enumerate(ligand_order):
@@ -153,7 +153,7 @@ def calc_dose_response_mutein(unkVec, input_params, tps, muteinC, cell_receptors
 
     # loop for each mutein concentration
     for i, conc in enumerate(muteinC):
-        active_ckine = runIL2simple(unkVec, input_params, conc, tps=tps, input_receptors=cell_receptors, adj_receptors=True)
+        active_ckine = runIL2simple(unkVec, input_params, conc, tps=tps, input_receptors=cell_receptors)
         total_activity[i, :] = np.reshape(active_ckine, (-1, 4))  # save the activity from this concentration for all 4 tps
 
     return total_activity

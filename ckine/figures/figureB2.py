@@ -26,9 +26,9 @@ def makeFigure():
     cellReceptors = np.zeros((3, 3))
 
     for i, cellName in enumerate(cellNames):
-        IL2Ra = df.loc[(df["Cell Type"] == cellName) & (df["Receptor"] == 'IL-2R$\\alpha$'), "Count"].item()
-        IL2Rb = df.loc[(df["Cell Type"] == cellName) & (df["Receptor"] == 'IL-2R$\\beta$'), "Count"].item()
-        gc = df.loc[(df["Cell Type"] == cellName) & (df["Receptor"] == '$\\gamma_{c}$'), "Count"].item()
+        IL2Ra = df.loc[(df["Cell Type"] == cellName) & (df["Receptor"] == 'IL-2R$\\alpha$'), "Count"].values[0]
+        IL2Rb = df.loc[(df["Cell Type"] == cellName) & (df["Receptor"] == 'IL-2R$\\beta$'), "Count"].values[0]
+        gc = df.loc[(df["Cell Type"] == cellName) & (df["Receptor"] == '$\\gamma_{c}$'), "Count"].values[0]
         cellReceptors[i, :] = receptor_expression(np.array([IL2Ra, IL2Rb, gc]).astype(np.float), rxntfR[17], rxntfR[20], rxntfR[19], rxntfR[21])
 
     for i, receptors in enumerate(cellReceptors):
@@ -49,7 +49,7 @@ def makeFigure():
 def dRespon_loc(input_params, input_receptors):  # same as dRespon except with different ILs range
     """ Calculate an IL2 dose response curve. """
     ILs = np.logspace(-4.0, 3.0)
-    activee = np.array([runIL2simple(rxntfR, input_params, ii, input_receptors=input_receptors, adj_receptors=True) for ii in ILs])
+    activee = np.array([runIL2simple(rxntfR, input_params, ii, input_receptors=input_receptors) for ii in ILs])
     return ILs, activee
 
 

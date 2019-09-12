@@ -12,6 +12,9 @@ from ..imports import import_Rexpr
 df, _, _ = import_Rexpr()
 df.reset_index(inplace=True)
 
+_, numpy_data, cell_names = import_Rexpr()
+numpy_data = receptor_expression(numpy_data, rxntfR[17], rxntfR[20], rxntfR[19], rxntfR[21])
+
 
 def makeFigure():
     """ Get a list of the axis objects and create a figure. """
@@ -37,18 +40,20 @@ def makeFigure():
     return f
 
 
-def dRespon(input_params, input_receptors=None, adj_receptors=False):
+def dRespon(input_params, input_receptors=None):
     """ Calculate an IL2 dose response curve. """
     ILs = np.logspace(-3.0, 3.0)
-    activee = np.array([runIL2simple(rxntfR, input_params, ii, input_receptors=input_receptors, adj_receptors=adj_receptors) for ii in ILs]).squeeze()
+    activee = np.array([runIL2simple(rxntfR, input_params, ii, input_receptors=input_receptors) for ii in ILs]).squeeze()
 
     return ILs, activee
 
 
-def IC50global(input_params, input_receptors=None, adj_receptors=False):
+def IC50global(input_params, input_receptors=None):
     """ Calculate half-maximal concentration w.r.t. wt. """
-    halfResponse = 20.0
-    return brentq(lambda x: runIL2simple(rxntfR, input_params, x, input_receptors=input_receptors, adj_receptors=adj_receptors) - halfResponse, 0, 1000.0, rtol=1e-5)
+    tps = np.array([50000.0])
+    halfResponse = runIL2simple(rxntfR, [1.0, 1.0, 5.0], 5000.0, input_receptors=input_receptors, tps=tps) / 2.0
+
+    return brentq(lambda x: runIL2simple(rxntfR, input_params, x, input_receptors=input_receptors, tps=tps) - halfResponse, 0, 1000.0, rtol=1e-5)
 
 
 def halfMax_IL2RaAff(ax):
@@ -85,7 +90,7 @@ def halfMax_IL2RbAff(ax, cellName, receptorExpr):
     output = np.zeros((changesA.size, receptorExpr.shape[0]))
     for i, itemA in enumerate(changesA):
         for j, itemB in enumerate(receptorExpr):
-            output[i, j] = IC50global([1.0, itemA, 5.0], input_receptors=itemB, adj_receptors=True)
+            output[i, j] = IC50global([1.0, itemA, 5.0], input_receptors=itemB)
 
     for ii in range(output.shape[1]):
         ax.loglog(changesA, output[:, ii], label=str(cellName[ii]))
@@ -101,7 +106,7 @@ def halfMax_IL2RbAff_highIL2Ra(ax, cellName, receptorExpr):
     output = np.zeros((changesA.size, receptorExpr.shape[0]))
     for i, itemA in enumerate(changesA):
         for j, itemB in enumerate(receptorExpr):
-            output[i, j] = IC50global([0.1, itemA, 5.0], input_receptors=itemB, adj_receptors=True)
+            output[i, j] = IC50global([0.1, itemA, 5.0], input_receptors=itemB)
 
     for ii in range(output.shape[1]):
         ax.loglog(changesA, output[:, ii], label=str(cellName[ii]))
@@ -111,7 +116,7 @@ def halfMax_IL2RbAff_highIL2Ra(ax, cellName, receptorExpr):
     ax.legend(title="Cell Type")
 
 
-def runIL2simple(unkVec, input_params, IL, CD25=1.0, tps=None, input_receptors=None, adj_receptors=False, ligandDegradation=False):
+def runIL2simple(unkVec, input_params, IL, CD25=1.0, tps=None, input_receptors=None, ligandDegradation=False):
     """ Version to focus on IL2Ra/Rb affinity adjustment. """
 
     if tps is None:
@@ -123,7 +128,7 @@ def runIL2simple(unkVec, input_params, IL, CD25=1.0, tps=None, input_receptors=N
     k2rev = 0.6 * 144 * input_params[1]
     k11rev = 63.0 * k5rev / 1.5 * input_params[1]
 
-    if adj_receptors:
+    if input_receptors is not None:
         IL2Ra = input_receptors[0] * CD25
         IL2Rb = input_receptors[1]
         gc = input_receptors[2]

@@ -49,7 +49,7 @@ def makeFigure():
 def ligandDeg_IL2(input_params, input_receptors):
     """ Calculate an IL2 degradation curve. """
     ILs = np.logspace(-4.0, 5.0)
-    ld = np.array([runIL2simple(rxntfR, input_params, ii, input_receptors=input_receptors, adj_receptors=True, ligandDegradation=True) for ii in ILs])
+    ld = np.array([runIL2simple(rxntfR, input_params, ii, input_receptors=input_receptors, ligandDegradation=True) for ii in ILs])
     return ILs, ld
 
 
