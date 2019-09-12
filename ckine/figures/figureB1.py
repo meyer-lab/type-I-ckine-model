@@ -5,8 +5,12 @@ import string
 import numpy as np
 from scipy.optimize import brentq
 from .figureCommon import subplotLabel, getSetup
-from ..model import runCkineU_IL2, ligandDeg, getTotalActiveCytokine
+from ..model import runCkineU_IL2, ligandDeg, getTotalActiveCytokine, receptor_expression
 from ..make_tensor import rxntfR
+from ..imports import import_Rexpr
+
+df, _, _ = import_Rexpr()
+df.reset_index(inplace=True)
 
 
 def makeFigure():
@@ -16,38 +20,42 @@ def makeFigure():
     for ii, item in enumerate(ax):
         subplotLabel(item, string.ascii_uppercase[ii])
 
+    cellNames = ["T-reg", "T-helper"]
+    cellReceptors = np.zeros((2, 3))
+
+    for i, cellName in enumerate(cellNames):
+        IL2Ra = df.loc[(df["Cell Type"] == cellName) & (df["Receptor"] == 'IL-2R$\\alpha$'), "Count"].item()
+        IL2Rb = df.loc[(df["Cell Type"] == cellName) & (df["Receptor"] == 'IL-2R$\\beta$'), "Count"].item()
+        gc = df.loc[(df["Cell Type"] == cellName) & (df["Receptor"] == '$\\gamma_{c}$'), "Count"].item()
+        cellReceptors[i, :] = receptor_expression(np.array([IL2Ra, IL2Rb, gc]).astype(np.float), rxntfR[17], rxntfR[20], rxntfR[19], rxntfR[21])
+
     halfMax_IL2RaAff(ax[0])
     activeReceptorComplexes(ax[1])
-    halfMax_IL2RbAff(ax[2])
-    halfMax_IL2RbAff_highIL2Ra(ax[3])
+    halfMax_IL2RbAff(ax[2], cellNames, cellReceptors)
+    halfMax_IL2RbAff_highIL2Ra(ax[3], cellNames, cellReceptors)
 
     return f
 
 
-def dRespon(input_params, CD25=1.0):
+def dRespon(input_params, input_receptors=None, adj_receptors=False):
     """ Calculate an IL2 dose response curve. """
     ILs = np.logspace(-3.0, 3.0)
-    activee = np.array([runIL2simple(rxntfR, input_params, ii, CD25) for ii in ILs]).squeeze()
+    activee = np.array([runIL2simple(rxntfR, input_params, ii, input_receptors=input_receptors, adj_receptors=adj_receptors) for ii in ILs]).squeeze()
 
     return ILs, activee
 
 
-def IC50global(input_params, CD25=1.0):
+def IC50global(input_params, input_receptors=None, adj_receptors=False):
     """ Calculate half-maximal concentration w.r.t. wt. """
     halfResponse = 20.0
-
-    return brentq(lambda x: runIL2simple(rxntfR, input_params, x, CD25) - halfResponse, 0, 1000.0, rtol=1e-5)
-
-
-changesA = np.logspace(-1, 1.5, num=20)
-changesB = np.array([0.0, 0.1, 0.25, 0.5, 1.0])
-output = np.zeros((changesA.size, changesB.size))
+    return brentq(lambda x: runIL2simple(rxntfR, input_params, x, input_receptors=input_receptors, adj_receptors=adj_receptors) - halfResponse, 0, 1000.0, rtol=1e-5)
 
 
 def halfMax_IL2RaAff(ax):
     """ Plots half maximal IL2 concentration for varied IL2Ra and IL2Rb affinities. """
     changesA_a = np.logspace(-2, 1, num=20)
     changesB_a = np.array([1.0, 2.0, 5.0, 10.0, 20.0])
+    output = np.zeros((changesA_a.size, changesB_a.size))
     for i, itemA in enumerate(changesA_a):
         for j, itemB in enumerate(changesB_a):
             output[i, j] = IC50global([itemA, itemB, 5.0])
@@ -69,33 +77,38 @@ def activeReceptorComplexes(ax):
     ax.legend()
 
 
-def halfMax_IL2RbAff(ax):
+changesA = np.logspace(-1, 1.5, num=20)
+
+
+def halfMax_IL2RbAff(ax, cellName, receptorExpr):
     """ Plots half maximal IL2 concentration across decreasing IL2Rb affinity for varied IL2Ra expression levels using wild type IL2Ra affinity. """
+    output = np.zeros((changesA.size, receptorExpr.shape[0]))
     for i, itemA in enumerate(changesA):
-        for j, itemB in enumerate(changesB):
-            output[i, j] = IC50global([1.0, itemA, 5.0], CD25=itemB)
+        for j, itemB in enumerate(receptorExpr):
+            output[i, j] = IC50global([1.0, itemA, 5.0], input_receptors=itemB, adj_receptors=True)
 
     for ii in range(output.shape[1]):
-        ax.loglog(changesA, output[:, ii], label=str(changesB[ii]))
+        ax.loglog(changesA, output[:, ii], label=str(cellName[ii]))
 
     ax.loglog([0.1, 10.0], [0.17, 0.17], "k-")
-    ax.set(ylabel="Half-Maximal IL2 Concentration [nM]", xlabel="IL2Rb-IL2 Kd (relative to wt)", ylim=(0.001, 10), xlim=(0.1, 10))
-    ax.legend(title="CD25 rel expr")
+    ax.set(ylabel="Half-Maximal IL2 Concentration [nM]", xlabel="IL2Rb-IL2 Kd (relative to wt)", xlim=(0.1, 10))
+    ax.legend(title="Cell Type")
 
 
-def halfMax_IL2RbAff_highIL2Ra(ax):
+def halfMax_IL2RbAff_highIL2Ra(ax, cellName, receptorExpr):
     """ Plots half maximal IL2 concentration across decreasing IL2Rb affinity for varied IL2Ra expression levels using 10x
     increased IL2Ra affinity. """
+    output = np.zeros((changesA.size, receptorExpr.shape[0]))
     for i, itemA in enumerate(changesA):
-        for j, itemB in enumerate(changesB):
-            output[i, j] = IC50global([0.1, itemA, 5.0], CD25=itemB)
+        for j, itemB in enumerate(receptorExpr):
+            output[i, j] = IC50global([0.1, itemA, 5.0], input_receptors=itemB, adj_receptors=True)
 
     for ii in range(output.shape[1]):
-        ax.loglog(changesA, output[:, ii], label=str(changesB[ii]))
+        ax.loglog(changesA, output[:, ii], label=str(cellName[ii]))
 
     ax.loglog([0.1, 10.0], [0.17, 0.17], "k-")
-    ax.set(ylabel="Half-Maximal IL2 Concentration [nM]", xlabel="IL2Rb-IL2 Kd (relative to wt)", ylim=(0.001, 10), xlim=(0.1, 10))
-    ax.legend(title="CD25 rel expr")
+    ax.set(ylabel="Half-Maximal IL2 Concentration [nM]", xlabel="IL2Rb-IL2 Kd (relative to wt)", xlim=(0.1, 10))
+    ax.legend(title="Cell Type")
 
 
 def runIL2simple(unkVec, input_params, IL, CD25=1.0, tps=None, input_receptors=None, adj_receptors=False, ligandDegradation=False):
@@ -118,10 +131,8 @@ def runIL2simple(unkVec, input_params, IL, CD25=1.0, tps=None, input_receptors=N
         IL2Ra, IL2Rb, gc = unkVec[22] * CD25, unkVec[23], unkVec[24]
 
     # IL, kfwd, k1rev, k2rev, k4rev, k5rev, k11rev, R, R, R
-    rxntfr = np.array(
-        [IL, kfwd, k1rev, k2rev, k4rev, k5rev, k11rev, IL2Ra, IL2Rb, gc, k1rev * input_params[2], k2rev * input_params[2], k4rev * input_params[2], k5rev * input_params[2], k11rev * input_params[2]]
-    )
-    # input_params[2] represents endosomal binding affinity relative to surface affinity
+    rxntfr = np.array([IL, kfwd, k1rev, k2rev, k4rev, k5rev, k11rev, IL2Ra, IL2Rb, gc, k1rev * input_params[2], k2rev * input_params[2],
+                       k4rev * input_params[2], k5rev * input_params[2], k11rev * input_params[2]])  # input_params[2] represents endosomal binding affinity relative to surface affinity
 
     yOut = runCkineU_IL2(tps, rxntfr)
 
