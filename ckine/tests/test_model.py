@@ -3,45 +3,12 @@ Unit test file.
 """
 import unittest
 import numpy as np
-from hypothesis import given, settings
-from hypothesis.strategies import floats
-from hypothesis.extra.numpy import arrays as harrays
-from ..model import fullModel, getTotalActiveCytokine, runCkineU, nSpecies, runCkineUP, runCkineU_IL2, ligandDeg
+from ..model import getTotalActiveCytokine, runCkineU, runCkineU_IL2, ligandDeg
 from ..figures.figureB1 import runIL2simple
-
-
-settings.register_profile("ci", max_examples=1000, deadline=None)
-settings.load_profile("ci")
-
-conservation_IDX = [
-    np.array([1, 4, 5, 7, 8, 11, 12, 14, 15]),  # IL2Rb
-    np.array([0, 3, 5, 6, 8]),  # IL2Ra
-    np.array([9, 10, 12, 13, 15]),  # IL15Ra
-    np.array([16, 17, 18]),  # IL7Ra
-    np.array([19, 20, 21]),  # IL9R
-    np.array([22, 23, 24]),  # IL4Ra
-    np.array([25, 26, 27]),  # IL21Ra
-    np.array([2, 6, 7, 8, 13, 14, 15, 18, 21, 24, 27]),
-]  # gc
 
 
 class TestModel(unittest.TestCase):
     """ Here are the unit tests. """
-
-    def assertPosEquilibrium(self, X, func):
-        """Assert that all species came to equilibrium."""
-        # All the species abundances should be above zero
-        self.assertGreater(np.min(X), -1.0e-7)
-
-        # Test that it came to equilibrium
-        self.assertLess(np.linalg.norm(func(X)) / (1.0 + np.sum(X)), 1e-5)
-
-    def assertConservation(self, y, y0, IDX):
-        """Assert the conservation of species throughout the experiment."""
-        species_delta = y - y0
-
-        # Check for conservation of species sum
-        self.assertAlmostEqual(np.sum(species_delta[IDX]), 0.0, msg=str(IDX))
 
     def setUp(self):
         self.ts = np.array([0.0, 100000.0])
@@ -54,92 +21,6 @@ class TestModel(unittest.TestCase):
         self.tfargs[2] = np.tanh(self.tfargs[2]) * 0.9
 
         self.rxntfR = np.concatenate((self.args, self.tfargs))
-
-    @given(y0=harrays(np.float, nSpecies(), elements=floats(1, 10)))
-    def test_conservation_full(self, y0):
-        """In the absence of trafficking, mass balance should hold in both compartments."""
-        rxntfR = self.rxntfR.copy()
-        rxntfR[17:30] = 0.0
-
-        dy = fullModel(y0, 0.0, rxntfR)
-
-        # Check for conservation of each surface receptor
-        for idxs in conservation_IDX:
-            self.assertConservation(dy, 0.0, idxs)
-
-        # Check for conservation of each endosomal receptor
-        for idxs in conservation_IDX:
-            self.assertConservation(dy, 0.0, idxs + 28)
-
-    def test_equlibrium(self):
-        """System should still come to equilibrium after being stimulated with ligand"""
-        t = np.array([0.0, 100000.0])
-        rxn = self.rxntfR.copy()
-        rxn[0:6] = 0.0  # set ligands to 0
-        rxnIL2, rxnIL15, rxnIL7, rxnIL9, rxnIL4, rxnIL21 = rxn.copy(), rxn.copy(), rxn.copy(), rxn.copy(), rxn.copy(), rxn.copy()
-        rxnIL2[0], rxnIL15[1], rxnIL7[2], rxnIL9[3], rxnIL4[5], rxnIL21[6] = 100.0, 100.0, 100.0, 100.0, 100.0, 100.0
-
-        # runCkine to get yOut
-        yOut_2 = runCkineU(t, rxnIL2)
-        yOut_15 = runCkineU(t, rxnIL15)
-        yOut_7 = runCkineU(t, rxnIL7)
-        yOut_9 = runCkineU(t, rxnIL9)
-        yOut_4 = runCkineU(t, rxnIL4)
-        yOut_21 = runCkineU(t, rxnIL21)
-
-        # check that dydt is ~0
-        self.assertPosEquilibrium(yOut_2[1], lambda y: fullModel(y, 100000.0, rxnIL2))
-        self.assertPosEquilibrium(yOut_15[1], lambda y: fullModel(y, 100000.0, rxnIL15))
-        self.assertPosEquilibrium(yOut_7[1], lambda y: fullModel(y, 100000.0, rxnIL7))
-        self.assertPosEquilibrium(yOut_9[1], lambda y: fullModel(y, 100000.0, rxnIL9))
-        self.assertPosEquilibrium(yOut_4[1], lambda y: fullModel(y, 100000.0, rxnIL4))
-        self.assertPosEquilibrium(yOut_21[1], lambda y: fullModel(y, 100000.0, rxnIL21))
-
-    def test_fullModel(self):
-        """ Assert that we're at autocrine steady-state at t=0. """
-        yOut = runCkineU(np.array([0.0]), self.rxntfR)
-        yOut = np.squeeze(yOut)
-
-        rxnNoLigand = self.rxntfR
-        rxnNoLigand[0:6] = 0.0
-
-        # Autocrine condition assumes no cytokine present, and so no activity
-        self.assertAlmostEqual(getTotalActiveCytokine(0, yOut), 0.0, places=5)
-
-        self.assertPosEquilibrium(yOut, lambda y: fullModel(y, 0.0, rxnNoLigand))
-
-    @given(y0=harrays(np.float, nSpecies(), elements=floats(0, 10)))
-    def test_reproducible(self, y0):
-        """ Make sure full model is reproducible under same conditions. """
-
-        dy1 = fullModel(y0, 0.0, self.rxntfR)
-
-        # Test that there's no difference
-        self.assertLess(np.linalg.norm(dy1 - fullModel(y0, 1.0, self.rxntfR)), 1e-8)
-
-        # Test that there's no difference
-        self.assertLess(np.linalg.norm(dy1 - fullModel(y0, 2.0, self.rxntfR)), 1e-8)
-
-    @given(vec=harrays(np.float, 30, elements=floats(0.1, 10.0)))
-    def test_runCkine(self, vec):
-        """ Make sure model runs properly by checking retVal. """
-        vec[19] = np.tanh(vec[19]) * 0.9  # Force sorting fraction to be less than 1.0
-        runCkineU(self.ts, vec)
-
-    def test_runCkineParallel(self):
-        """ Test that we can run solving in parallel. """
-        rxntfr = np.reshape(np.tile(self.rxntfR, 20), (20, -1))
-
-        outt = runCkineUP(self.ts[1], rxntfr)
-
-        # test that all of the solutions returned are identical
-        for ii in range(rxntfr.shape[0]):
-            self.assertTrue(np.all(outt[0, :] == outt[ii, :]))
-
-    def test_initial(self):
-        """ Test that there is at least 1 non-zero species at T=0. """
-        temp = runCkineU(self.ts, self.rxntfR)
-        self.assertGreater(np.count_nonzero(temp[0, :]), 0)
 
     def test_gc(self):
         """ Test to check that no active species is present when gamma chain is not expressed. """
@@ -258,14 +139,6 @@ class TestModel(unittest.TestCase):
         reg = ligandDeg(y[1, :], sortF, kDeg, 1)
         high_kDeg = ligandDeg(y[1, :], sortF, kDeg * 10, 1)
         self.assertGreater(high_kDeg, reg)
-
-    def test_noTraff(self):
-        """ Make sure no endosomal species are found when endo=0. """
-        rxntfR = self.rxntfR.copy()
-        rxntfR[17:19] = 0.0  # set endo and activeEndo to 0.0
-        yOut = runCkineU(self.ts, rxntfR)
-        tot_endo = np.sum(yOut[1, 28::])
-        self.assertEqual(tot_endo, 0.0)
 
     def test_IL2_endo_binding(self):
         """ Make sure that the runIL2simple works and that increasing the endosomal reverse reaction rates causes tighter binding (less ligand degradation). """
