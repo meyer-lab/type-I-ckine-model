@@ -10,6 +10,7 @@ from FlowCytometryTools import FCMeasurement
 from FlowCytometryTools import QuadGate, ThresholdGate
 from sklearn import preprocessing
 from sklearn.decomposition import PCA
+from scipy.optimize import least_squares
 
 
 def importF(pathname):
@@ -574,42 +575,58 @@ def pcaAllCellType(sampleType, check, titles):
 # ************************Dose Response by PCA******************************
 
 
-def PCADoseResponse(sampleType, PC1Bnds, PC2Bnds, Tcells=True):
+def PCADoseResponse(sampleType, PC1Bnds, PC2Bnds, gate, Tcells=True):
     """
     Given data from a time Point and two PC bounds, the dose response curve will be calculated and graphed
     (needs folder with FCS from one time point)
     """
     dosemat = np.array([84, 28, 9.333333, 3.111, 1.037037, 0.345679, 0.115226, 0.038409, 0.012803, 0.004268, 0.001423, 0.000474])
-    Pstatvals = []
+    pSTATvals = np.zeros([1, dosemat.size])
 
     for i, sample in enumerate(sampleType):
         if Tcells:
             data, pstat, features = sampleT(sample)  # retrieve data
+            statcol = 'RL1-H'
         else:
             data, pstat, features = sampleNK(sample)
+            statcol = 'BL2-H'
+        if gate:
+            gates = gate()
+            _, alldata = count_data(sampleType, gates)
+            data = alldata[i]
+            pstat = data[[statcol]]
+
         if i == 0:
             PCAobj, _ = fitPCA(data, features)  # only fit to first set
-        xf = appPCA(data, features, PCAobj)  # get PC1/2 vals
-        PC1, PC2, pstat = np.transpose(xf[:, 0]), np.transpose(xf[:, 1]), pstat.to_numpy()
-        PC1, PC2 = np.reshape(PC1, (PC1.size, 1)), np.reshape(PC2, (PC2.size, 1))
-        PCAstat = np.concatenate((PC1, PC2, pstat), axis=1)
-        PCApd = pd.DataFrame({'PC1': PCAstat[:, 0], 'PC2': PCAstat[:, 1], 'Pstat': PCAstat[:, 2]})  # arrange into pandas datafrome
-        PCApd = PCApd[PCApd['PC1'] >= PC1Bnds[0]]  # remove data that that is not within given PC bounds
-        PCApd = PCApd[PCApd['PC1'] <= PC1Bnds[1]]
-        PCApd = PCApd[PCApd['PC2'] >= PC2Bnds[0]]
-        PCApd = PCApd[PCApd['PC2'] <= PC2Bnds[1]]
-        Pstatvals.append(PCApd.loc[:, "Pstat"].mean())  # take average Pstat activity of data fitting criteria
 
+        xf = appPCA(data, features, PCAobj)  # get PC1/2 vals
+        PCApd = PCdatTransform(xf, pstat)
+        PCApd = PCApd[(PCApd['PC1'] >= PC1Bnds[0]) & (PCApd['PC1'] <= PC1Bnds[1]) & (PCApd['PC2'] >= PC2Bnds[0]) & (PCApd['PC2'] <= PC2Bnds[1])] # remove data that that is not within given PC bounds
+        pSTATvals[0, i] = PCApd.loc[:, "pSTAT"].mean() # take average Pstat activity of data fitting criteria
+
+    pSTATvals = pSTATvals.flatten()
     _, ax = plt.subplots(figsize=(8, 8))
-    plt.plot(dosemat, Pstatvals, ".--", color="navy")
+    plt.plot(dosemat, pSTATvals, ".--", color="navy")
     plt.grid()
-    ax.set_title("PCA Gated Dose Response Curve", fontsize=20)
+    if gate:
+        ax.set_title("PCA Gated Dose Response Curve for PC1 " + str(PC1Bnds) + " And PC2 " + str(PC2Bnds) + " for " + gate.__name__ + "Cells", fontsize=10)
+    else:
+        ax.set_title("PCA Gated Dose Response Curve for PC1 " + str(PC1Bnds) + " And PC2 " + str(PC2Bnds), fontsize=13)
     ax.set_xscale('log')
     ax.set_xlabel("Cytokine Dosage (log10[nM])", fontsize=15)
     ax.set_ylabel("Average Pstat Activity", fontsize=15)
     ax.set(xlim=(0.0001, 100))
     plt.show()
-    return Pstatvals, dosemat
+    return pSTATvals, dosemat
+
+
+def PCdatTransform(xf, pstat):
+    '''Takes PCA Data and transforms it into a pandas dataframe (variable saver)'''
+    PC1, PC2, pstat = np.transpose(xf[:, 0]), np.transpose(xf[:, 1]), pstat.to_numpy()
+    PC1, PC2 = np.reshape(PC1, (PC1.size, 1)), np.reshape(PC2, (PC2.size, 1))
+    PCAstat = np.concatenate((PC1, PC2, pstat), axis=1)
+    PCApd = pd.DataFrame({'PC1': PCAstat[:, 0], 'PC2': PCAstat[:, 1], 'pSTAT': PCAstat[:, 2]})  # arrange into pandas datafrome
+    return PCApd
 
 
 def StatGini(sampleType, Timepoint, gate, Tcells=True):
@@ -663,3 +680,57 @@ def StatGini(sampleType, Timepoint, gate, Tcells=True):
     ax.set(xlim=(0.0001, 100))
     plt.show()
     return ginis, dosemat
+
+
+def nllsq_EC50(x0, xdata, ydata):
+    """ Performs nonlinear least squares on activity measurements to determine parameters of Hill equation and outputs EC50. """
+    lsq_res = least_squares(residuals, x0, args=(xdata, ydata), bounds=([0., 0., 0., 0.], [10., 100., 10**5., 10**5]), jac='3-point')
+    return lsq_res.x[0]
+
+
+def residuals(x0, x, y):
+    """ Residual function for Hill Equation. """
+    return hill_equation(x, x0) - y
+
+
+def hill_equation(x, x0, solution=0):
+    """ Calculates EC50 from Hill Equation. """
+    k = x0[0]
+    n = x0[1]
+    A = x0[2]
+    floor = x0[3]
+    xk = np.power(x / k, n)
+    return (A * xk / (1.0 + xk)) - solution + floor
+
+
+def EC50_PC_Scan(sampleType, Timepoint, min_max_pts, gate, Tcells=True, PC1=True):
+    '''Scans along one Principal component and returns EC50 for slices along that Axis'''
+    x0 = [1, 2., 5000., 3000.]# would put gating here
+    EC50s = np.zeros([1, min_max_pts[2]])
+    scanspace = np.linspace(min_max_pts[0], min_max_pts[1], num=min_max_pts[2] + 1)
+    axrange = np.array([-100, 100])
+
+    for i in range(0, min_max_pts[2]): #set bounds and calculate EC50s
+        if PC1:
+            PC1Bnds, PC2Bnds = np.array([scanspace[i], scanspace[i + 1]]), axrange
+        else:
+            PC2Bnds, PC1Bnds = np.array([scanspace[i], scanspace[i + 1]]), axrange
+        pSTATs, doses = PCADoseResponse(sampleType, PC1Bnds, PC2Bnds, gate, Tcells)
+        doses = np.log10(doses.astype(np.float) * 1e4)
+        EC50s[0, i] = nllsq_EC50(x0, doses, pSTATs)[0]
+
+    EC50s = EC50s.flatten() - 4 # account for 10^4 multiplication
+    _, ax = plt.subplots(figsize=(8, 8))
+    plt.plot(scanspace[:-1] + (min_max_pts[1] - min_max_pts[0]) / (2 * min_max_pts[2]), EC50s, ".--", color="navy")
+    plt.grid()
+    if gate:
+        Timepoint = Timepoint + " for " + gate.__name__ + " cells"
+    if PC1:
+        ax.set_title("EC50s along PC1 for " + Timepoint, fontsize=20)
+    else:
+        ax.set_title("EC50s along PC2 for " + Timepoint, fontsize=20)
+    ax.set_xlabel("PC Space", fontsize=15)
+    ax.set_ylabel("log[EC50] (nM)", fontsize=15)
+    ax.set(ylim=(-3, 3))
+    ax.set(xlim=(min_max_pts[0], min_max_pts[1]))
+    plt.show()
