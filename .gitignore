@@ -2,5 +2,4 @@
 .hypothesis
 **/.ipynb_checkpoints
 venv
-ckine/solver.so
-juliac.jl
+ckine/ckine.so
