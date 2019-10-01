@@ -15,4 +15,4 @@ svgutils==0.3.1
 FlowCytometryTools==0.5.0
 synapseclient
 gprof2dot
-pylint==2.3.1
+pylint
