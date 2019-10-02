@@ -62,7 +62,7 @@ def tregMem():
     """Function for creating and returning the T reg gate on CD4+ cells"""
     treg1 = QuadGate((4.814e+03, 3.229e+03), ('BL1-H', 'VL1-H'), region='top right', name='treg1')
     treg2 = QuadGate((6.258e+03, 5.814e+03), ('BL1-H', 'VL1-H'), region='bottom left', name='treg2')
-    cd45 = ThresholdGate(1e+05, ('BL3-H'), region="below", name='cd45')
+    cd45 = ThresholdGate(6300, ('BL3-H'), region="below", name='cd45')
     treg_gate = treg1 & treg2 & cd4() & cd45
     return treg_gate
 
@@ -71,7 +71,7 @@ def tregNaive():
     """Function for creating and returning the T reg gate on CD4+ cells"""
     treg1 = QuadGate((4.814e+03, 3.229e+03), ('BL1-H', 'VL1-H'), region='top right', name='treg1')
     treg2 = QuadGate((6.258e+03, 5.814e+03), ('BL1-H', 'VL1-H'), region='bottom left', name='treg2')
-    cd45 = ThresholdGate(1e+05, ('BL3-H'), region="above", name='cd45')
+    cd45 = ThresholdGate(6300, ('BL3-H'), region="above", name='cd45')
     treg_gate = treg1 & treg2 & cd4() & cd45
     return treg_gate
 
@@ -88,7 +88,7 @@ def THelpMem():
     """Function for creating and returning the non T reg gate on CD4+ cells"""
     nontreg1 = QuadGate((5.115e+03, 3.470e+02), ('BL1-H', 'VL1-H'), region="top left", name='nontreg1')
     nontreg2 = QuadGate((2.586e+03, 5.245e+03), ('BL1-H', 'VL1-H'), region="bottom right", name='nontreg2')
-    cd45 = ThresholdGate(1e+05, ('BL3-H'), region="below", name='cd45')
+    cd45 = ThresholdGate(6300, ('BL3-H'), region="below", name='cd45')
     nonTreg_gate = nontreg1 & nontreg2 & cd4() & cd45
     return nonTreg_gate
 
@@ -97,7 +97,7 @@ def THelpN():
     """Function for creating and returning the non T reg gate on CD4+ cells"""
     nontreg1 = QuadGate((5.115e+03, 3.470e+02), ('BL1-H', 'VL1-H'), region="top left", name='nontreg1')
     nontreg2 = QuadGate((2.586e+03, 5.245e+03), ('BL1-H', 'VL1-H'), region="bottom right", name='nontreg2')
-    cd45 = ThresholdGate(1e+05, ('BL3-H'), region="above", name='cd45')
+    cd45 = ThresholdGate(6300, ('BL3-H'), region="above", name='cd45')
     nonTreg_gate = nontreg1 & nontreg2 & cd4() & cd45
     return nonTreg_gate
 
@@ -129,27 +129,36 @@ def cd():
     return cd_gate
 
 
-def cellCount(sample_i, gate):
+def cellCount(sample_i, gate, Tcells=True):
     """
     Function for returning the count of cells in a single .fcs. file of a single cell file. Arguments: single sample/.fcs file and the gate of the
     desired cell output.
     """
     # Import single file and save data to a variable --> transform to logarithmic scale
-    smpl = sample_i.transform("hlog", channels=["BL1-H", "VL1-H", "VL4-H", "RL1-H"])
+    if Tcells:
+        channels = ["BL1-H", "VL1-H", "VL4-H", "BL3-H"]
+    else:
+        channels = ["BL1-H", "RL1-H", "VL4-H"]
+    smpl = sample_i.transform("hlog", channels=channels)
     # Apply T reg gate to overall data --> i.e. step that detrmines which cells are T reg
     cells = smpl.gate(gate)
     # Number of events (AKA number of cells)
     cell_count = cells.get_data().shape[0]
+    #print(cell_count)
     # print('Number of Treg cells:' + str(treg_count))
     return cell_count
 
 
-def rawData(sample_i, gate):
+def rawData(sample_i, gate, Tcells=True):
     """
     Function that returns the raw data of certain cell population in a given file. Arguments: sample_i is a single entry/.fcs file and the gate
     of the desired cell population.
     """
-    smpl = sample_i.transform("hlog", channels=["BL1-H", "VL1-H", "VL4-H", "RL1-H"])
+    if Tcells:
+        channels = ["BL1-H", "VL1-H", "VL4-H", "BL3-H"]
+    else:
+        channels = ["BL1-H", "RL1-H", "VL4-H"]
+    smpl = sample_i.transform("hlog", channels=channels)
     # Apply T reg gate to overall data --> i.e. step that detrmines which cells are T reg
     cells = smpl.gate(gate)
     # Get raw data of t reg cells in file
@@ -240,7 +249,7 @@ def cd_plot(sample_i, cd_gate, title):
     ax2.legend([bar_CD], ("CD3+8+"), loc="upper left")
 
 
-def count_data(sampleType, gate):
+def count_data(sampleType, gate, Tcells=True):
     """
     Used to count the number of cells and store the data of all of these cells in a folder with multiple files --> automates the process sampleType
     is NK or T cell data, gate is the desired cell population.
@@ -252,8 +261,8 @@ def count_data(sampleType, gate):
     # create the for loop to file through the data and save to the arrays
     # using the functions created above for a singular file
     for _, sample in enumerate(sampleType):
-        count_array.append(cellCount(sample, gate))
-        data_array.append(rawData(sample, gate))
+        count_array.append(cellCount(sample, gate, Tcells))
+        data_array.append(rawData(sample, gate, Tcells))
     # returns the array for count of cells and the array where each entry is the data for the specific cell population in that .fcs file
     return count_array, data_array
 
@@ -286,7 +295,7 @@ def sampleT(smpl):
     # Features are the protein channels of interest when analyzing T cells
     features = ["BL1-H", "VL1-H", "VL4-H", "BL3-H"]
     # Transform to put on log scale
-    tform = smpl.transform("hlog", channels=["BL1-H", "VL1-H", "VL4-H", "BL3-H", "RL1-H"])
+    tform = smpl.transform("hlog", channels=["BL1-H", "VL1-H", "VL4-H", "BL3-H"])
     # Save the data of each column of the protein channels
     data = tform.data[["BL1-H", "VL1-H", "VL4-H", "BL3-H"]][0:]
     # Save pSTAT5 data
@@ -301,7 +310,7 @@ def sampleNK(smpl):
     # Features for the NK file of proteins (CD3, CD8, CD56)
     features = ["VL4-H", "RL1-H", "BL1-H"]
     # Transform all proteins (including pSTAT5)
-    tform = smpl.transform("hlog", channels=["VL4-H", "RL1-H", "BL1-H", "BL2-H"])
+    tform = smpl.transform("hlog", channels=["VL4-H", "RL1-H", "BL1-H"])
     # Assign data of three protein channels AND pSTAT5
     data = tform.data[["VL4-H", "RL1-H", "BL1-H"]][0:]
     pstat = tform.data[["BL2-H"]][0:]
@@ -385,7 +394,7 @@ def pcaPlt(xf, pstat, features, title, tplate=True):
     plt.colorbar(points)
 
 
-def loadingPlot(loading, features, i, title):
+def loadingPlot(loading, features, title):
     """Plot the loading data"""
     # Loading
     # Create graph for loading values
@@ -395,9 +404,11 @@ def loadingPlot(loading, features, i, title):
     # Create figure for the loading plot
     fig1 = plt.figure(figsize=(8, 8))
     ax = fig1.add_subplot(1, 1, 1)
+    ax.set(xlim=(-1, 1), ylim=(-1, 1))
     ax.set_xlabel("PC1", fontsize=15)
     ax.set_ylabel("PC2", fontsize=15)
     plt.scatter(x_load, y_load)
+    plt.grid()
 
     for z, feature in enumerate(features):
         # Please note: not the best logic, but there are three features in NK and four features in T cells
@@ -420,7 +431,7 @@ def loadingPlot(loading, features, i, title):
             if feature == "BL1-H":
                 feature = "CD56"
         plt.annotate(str(feature), xy=(x_load[z], y_load[z]))
-        plt.savefig('loading' + str(i) + '.png')
+        #plt.savefig('loading' + str(i) + '.png')
     ax.set_title(name + " - Loading - " + str(title), fontsize=20)
 
 
@@ -450,7 +461,7 @@ def pcaAll(sampleType, check, titles):
             xf = appPCA(data, features, PCAobj)
             xf_array.append(xf)
             pcaPlt(xf, pstat, features, title, tplate=True)
-            loadingPlot(loading, features, i, title)
+            loadingPlot(loading, features, title)
             plt.show()
     elif check == "n":
         for i, sample in enumerate(sampleType):
@@ -463,7 +474,7 @@ def pcaAll(sampleType, check, titles):
                 PCAobj, loading = fitPCA(data, features)
             xf = appPCA(data, features, PCAobj)
             pcaPlt(xf, pstat, features, title, tplate=False)
-            loadingPlot(loading, features, i, title)
+            loadingPlot(loading, features, title)
             plt.show()
     return data_array, pstat_array, xf_array
 
@@ -478,7 +489,7 @@ def sampleTcolor(smpl):
     cd45dat = smpl[["BL3-H"]]
     cd45dat = cd45dat.iloc[:, 0]
     cd45dat = np.log10(cd45dat)
-    tform = smpl.transform("hlog", channels=["BL1-H", "VL1-H", "VL4-H", "BL3-H", "RL1-H"])
+    tform = smpl.transform("hlog", channels=["BL1-H", "VL1-H", "VL4-H", "BL3-H"])
     # Save the data of each column of the protein channels
     data = tform.data[["BL1-H", "VL1-H", "VL4-H", "BL3-H"]][0:]
     # Save pSTAT5 data
@@ -486,12 +497,12 @@ def sampleTcolor(smpl):
     colmat = [] * (len(data) + 1)
     for i in range(len(data)):
         if data.iat[i, 0] > 4.814e+03 and data.iat[i, 0] < 6.258e+03 and data.iat[i, 1] > 3.229e+03 and data.iat[i, 1] < 5.814e+03:
-            if cd45dat[i] > 5:
+            if cd45dat[i] > 3.8:
                 colmat.append('r')  # Treg naive
             else:
                 colmat.append('darkorange')  # Treg mem
         elif data.iat[i, 0] > 2.586e+03 and data.iat[i, 0] < 5.115e+03 and data.iat[i, 1] > 3.470e+02 and data.iat[i, 1] < 5.245e+03:
-            if cd45dat[i] > 5:
+            if cd45dat[i] > 3.8:
                 colmat.append('g')  # Thelp naive
             else:
                 colmat.append('darkorchid')  # Thelp mem
@@ -507,7 +518,7 @@ def sampleNKcolor(smpl):
     # Features for the NK file of proteins (CD3, CD8, CD56)
     features = ["VL4-H", "RL1-H", "BL1-H"]
     # Transform all proteins (including pSTAT5)
-    tform = smpl.transform("hlog", channels=["VL4-H", "RL1-H", "BL1-H", "BL2-H"])
+    tform = smpl.transform("hlog", channels=["VL4-H", "RL1-H", "BL1-H"])
     # Assign data of three protein channels AND pSTAT5
     data = tform.data[["VL4-H", "RL1-H", "BL1-H"]][0:]
     pstat = tform.data[["BL2-H"]][0:]
@@ -594,7 +605,7 @@ def pcaAllCellType(sampleType, check, titles):
             xf_array.append(xf)
             loading_array.append(loading)
             pcaPltColor(xf, pstat, features, title, colormat)  # changed
-            loadingPlot(loading, features, i, title)
+            loadingPlot(loading, features, title)
     elif check == "n":
         for i, sample in enumerate(sampleType):
             title = titles[i].split("/")
@@ -606,7 +617,7 @@ def pcaAllCellType(sampleType, check, titles):
                 PCAobj, loading = fitPCA(data, features)
             xf = appPCA(data, features, PCAobj)
             pcaPltColor(xf, pstat, features, title, colormat)
-            loadingPlot(loading, features, i, title)
+            loadingPlot(loading, features, title)
     plt.show()
     return data_array, pstat_array, xf_array, loading_array
 
@@ -622,7 +633,7 @@ def PCADoseResponse(sampleType, PC1Bnds, PC2Bnds, gate, Tcells=True):
     pSTATvals = np.zeros([1, dosemat.size])
     if gate:
         gates = gate()
-        _, alldata = count_data(sampleType, gates)
+        _, alldata = count_data(sampleType, gates, Tcells)
 
     for i, sample in enumerate(sampleType):
         if Tcells:
@@ -673,13 +684,12 @@ def StatGini(sampleType, Timepoint, gate, Tcells=True):
     Define the Gini Coefficient of Pstat Vals Across a timepoint for either whole or gated population.
     Takes a folder of samples, a timepoint (string), a boolean check for cell type and an optional gate parameter.
     """
-    ginis = []
     alldata = []
-    dosemat = np.array([84, 28, 9.333333, 3.111, 1.037037, 0.345679, 0.115226, 0.038409, 0.012803, 0.004268, 0.001423, 0.000474])
-
+    dosemat = np.array([[84, 28, 9.333333, 3.111, 1.037037, 0.345679, 0.115226, 0.038409, 0.012803, 0.004268, 0.001423, 0.000474]])
+    ginis = np.zeros([1, dosemat.size])
     if gate:
         gates = gate()
-        _, alldata = count_data(sampleType, gates)  # returns array of dfs in case of gate or no gate
+        _, alldata = count_data(sampleType, gates, Tcells)  # returns array of dfs in case of gate or no gate
 
     else:
         for i, sample in enumerate(sampleType):
@@ -704,7 +714,7 @@ def StatGini(sampleType, Timepoint, gate, Tcells=True):
         subconst = (num + 1) / num
         coef = 2 / num
         summed = sum([(j + 1) * stat for j, stat in enumerate(stat_sort)])
-        ginis.append(coef * summed / (stat_sort.sum()) - subconst)
+        ginis[0, i] = (coef * summed / (stat_sort.sum()) - subconst)
 
     _, ax = plt.subplots(figsize=(8, 8))
     plt.plot(dosemat, ginis, ".--", color="navy")
@@ -717,7 +727,7 @@ def StatGini(sampleType, Timepoint, gate, Tcells=True):
     ax.set_xlabel("Cytokine Dosage (log10[nM])", fontsize=15)
     ax.set_ylabel("Gini Coefficient", fontsize=15)
     ax.set(xlim=(0.0001, 100))
-    ax.set(ylim=(0., 0.5))
+    ax.set(ylim=(0., 0.15))
     plt.show()
     return ginis, dosemat
 
