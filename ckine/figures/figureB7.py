@@ -8,7 +8,7 @@ import pandas as pd
 import seaborn as sns
 from scipy.optimize import least_squares
 from .figureCommon import subplotLabel, getSetup
-from .figureB6 import organize_expr_pred, mutein_scaling
+from ..mutein_activity import organize_expr_pred, mutein_scaling
 from ..imports import import_muteins, import_Rexpr, import_samples_2_15
 
 dataMean, _ = import_muteins()

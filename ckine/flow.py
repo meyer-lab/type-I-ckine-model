@@ -144,7 +144,7 @@ def cellCount(sample_i, gate, Tcells=True):
     cells = smpl.gate(gate)
     # Number of events (AKA number of cells)
     cell_count = cells.get_data().shape[0]
-    #print(cell_count)
+    # print(cell_count)
     # print('Number of Treg cells:' + str(treg_count))
     return cell_count
 
@@ -651,8 +651,8 @@ def PCADoseResponse(sampleType, PC1Bnds, PC2Bnds, gate, Tcells=True):
 
         xf = appPCA(data, features, PCAobj)  # get PC1/2 vals
         PCApd = PCdatTransform(xf, pstat)
-        PCApd = PCApd[(PCApd['PC1'] >= PC1Bnds[0]) & (PCApd['PC1'] <= PC1Bnds[1]) & (PCApd['PC2'] >= PC2Bnds[0]) & (PCApd['PC2'] <= PC2Bnds[1])] # remove data that that is not within given PC bounds
-        pSTATvals[0, i] = PCApd.loc[:, "pSTAT"].mean() # take average Pstat activity of data fitting criteria
+        PCApd = PCApd[(PCApd['PC1'] >= PC1Bnds[0]) & (PCApd['PC1'] <= PC1Bnds[1]) & (PCApd['PC2'] >= PC2Bnds[0]) & (PCApd['PC2'] <= PC2Bnds[1])]  # remove data that that is not within given PC bounds
+        pSTATvals[0, i] = PCApd.loc[:, "pSTAT"].mean()  # take average Pstat activity of data fitting criteria
 
     pSTATvals = pSTATvals.flatten()
     _, ax = plt.subplots(figsize=(8, 8))
@@ -757,12 +757,12 @@ def hill_equation(x, x0, solution=0):
 
 def EC50_PC_Scan(sampleType, Timepoint, min_max_pts, gate, Tcells=True, PC1=True):
     """Scans along one Principal component and returns EC50 for slices along that Axis"""
-    x0 = [1, 2., 5000., 3000.]# would put gating here
+    x0 = [1, 2., 5000., 3000.]  # would put gating here
     EC50s = np.zeros([1, min_max_pts[2]])
     scanspace = np.linspace(min_max_pts[0], min_max_pts[1], num=min_max_pts[2] + 1)
     axrange = np.array([-100, 100])
 
-    for i in range(0, min_max_pts[2]): #set bounds and calculate EC50s
+    for i in range(0, min_max_pts[2]):  # set bounds and calculate EC50s
         if PC1:
             PC1Bnds, PC2Bnds = np.array([scanspace[i], scanspace[i + 1]]), axrange
         else:
@@ -771,7 +771,7 @@ def EC50_PC_Scan(sampleType, Timepoint, min_max_pts, gate, Tcells=True, PC1=True
         doses = np.log10(doses.astype(np.float) * 1e4)
         EC50s[0, i] = nllsq_EC50(x0, doses, pSTATs)
 
-    EC50s = EC50s.flatten() - 4 # account for 10^4 multiplication
+    EC50s = EC50s.flatten() - 4  # account for 10^4 multiplication
     _, ax = plt.subplots(figsize=(8, 8))
     plt.plot(scanspace[:-1] + (min_max_pts[1] - min_max_pts[0]) / (2 * min_max_pts[2]), EC50s, ".--", color="navy")
     plt.grid()

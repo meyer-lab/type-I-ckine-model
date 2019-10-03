@@ -77,6 +77,44 @@ def runCkineU_IL2(tps, rxntfr):
     return yOut
 
 
+def runIL2simple(unkVec, input_params, IL, CD25=1.0, tps=None, input_receptors=None, ligandDegradation=False):
+    """ Version to focus on IL2Ra/Rb affinity adjustment. """
+
+    if tps is None:
+        tps = np.array([500.0])
+
+    kfwd, k4rev, k5rev = unkVec[6], unkVec[7], unkVec[8]
+
+    k1rev = 0.6 * 10 * input_params[0]
+    k2rev = 0.6 * 144 * input_params[1]
+    k11rev = 63.0 * k5rev / 1.5 * input_params[1]
+
+    if input_receptors is not None:
+        IL2Ra = input_receptors[0] * CD25
+        IL2Rb = input_receptors[1]
+        gc = input_receptors[2]
+    else:
+        IL2Ra, IL2Rb, gc = unkVec[22] * CD25, unkVec[23], unkVec[24]
+
+    # IL, kfwd, k1rev, k2rev, k4rev, k5rev, k11rev, R, R, R
+    rxntfr = np.array([IL, kfwd, k1rev, k2rev, k4rev, k5rev, k11rev, IL2Ra, IL2Rb, gc, k1rev * input_params[2], k2rev * input_params[2],
+                       k4rev * input_params[2], k5rev * input_params[2], k11rev * input_params[2]])  # input_params[2] represents endosomal binding affinity relative to surface affinity
+
+    yOut = runCkineU_IL2(tps, rxntfr)
+
+    if ligandDegradation:
+        # rate of ligand degradation
+        return ligandDeg(yOut[0], sortF=unkVec[19], kDeg=unkVec[21], cytokineIDX=0)
+
+    active_ckine = np.zeros(yOut.shape[0])
+
+    # calculate for each time point
+    for i in range(yOut.shape[0]):
+        active_ckine[i] = getTotalActiveCytokine(0, yOut[i, :])
+
+    return active_ckine
+
+
 def runCkineU(tps, rxntfr, preT=0.0, prestim=None):
     """ Standard version of solver that returns species abundances given times and unknown rates. """
     return runCkineUP(tps, np.atleast_2d(rxntfr.copy()), preT, prestim)

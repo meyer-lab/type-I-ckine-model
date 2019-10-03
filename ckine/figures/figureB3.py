@@ -4,8 +4,7 @@ This creates Figure 3.
 import string
 import numpy as np
 from .figureCommon import subplotLabel, getSetup
-from .figureB1 import runIL2simple
-from ..model import receptor_expression
+from ..model import runIL2simple, receptor_expression
 from ..make_tensor import rxntfR
 from ..imports import import_Rexpr
 

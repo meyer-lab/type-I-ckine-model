@@ -5,7 +5,7 @@ import string
 import numpy as np
 from scipy.optimize import brentq
 from .figureCommon import subplotLabel, getSetup
-from ..model import runCkineU_IL2, ligandDeg, getTotalActiveCytokine, receptor_expression
+from ..model import runIL2simple, receptor_expression
 from ..make_tensor import rxntfR
 from ..imports import import_Rexpr
 
@@ -114,41 +114,3 @@ def halfMax_IL2RbAff_highIL2Ra(ax, cellName, receptorExpr):
     ax.loglog([0.1, 10.0], [0.17, 0.17], "k-")
     ax.set(ylabel="Half-Maximal IL2 Concentration [nM]", xlabel="IL2Rb-IL2 Kd (relative to wt)", xlim=(0.1, 10))
     ax.legend(title="Cell Type")
-
-
-def runIL2simple(unkVec, input_params, IL, CD25=1.0, tps=None, input_receptors=None, ligandDegradation=False):
-    """ Version to focus on IL2Ra/Rb affinity adjustment. """
-
-    if tps is None:
-        tps = np.array([500.0])
-
-    kfwd, k4rev, k5rev = unkVec[6], unkVec[7], unkVec[8]
-
-    k1rev = 0.6 * 10 * input_params[0]
-    k2rev = 0.6 * 144 * input_params[1]
-    k11rev = 63.0 * k5rev / 1.5 * input_params[1]
-
-    if input_receptors is not None:
-        IL2Ra = input_receptors[0] * CD25
-        IL2Rb = input_receptors[1]
-        gc = input_receptors[2]
-    else:
-        IL2Ra, IL2Rb, gc = unkVec[22] * CD25, unkVec[23], unkVec[24]
-
-    # IL, kfwd, k1rev, k2rev, k4rev, k5rev, k11rev, R, R, R
-    rxntfr = np.array([IL, kfwd, k1rev, k2rev, k4rev, k5rev, k11rev, IL2Ra, IL2Rb, gc, k1rev * input_params[2], k2rev * input_params[2],
-                       k4rev * input_params[2], k5rev * input_params[2], k11rev * input_params[2]])  # input_params[2] represents endosomal binding affinity relative to surface affinity
-
-    yOut = runCkineU_IL2(tps, rxntfr)
-
-    if ligandDegradation:
-        # rate of ligand degradation
-        return ligandDeg(yOut[0], sortF=unkVec[19], kDeg=unkVec[21], cytokineIDX=0)
-
-    active_ckine = np.zeros(yOut.shape[0])
-
-    # calculate for each time point
-    for i in range(yOut.shape[0]):
-        active_ckine[i] = getTotalActiveCytokine(0, yOut[i, :])
-
-    return active_ckine
