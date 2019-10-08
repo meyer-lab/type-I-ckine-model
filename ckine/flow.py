@@ -317,11 +317,15 @@ def sampleNK(smpl):
     return data, pstat, features
 
 
-def fitPCA(data, features):
+def fitPCA(data, Tcells=True):
     """
     Fits the PCA model to data, and returns the fit PCA model for future transformations
     (allows for consistent loadings plots between wells)
     """
+    if Tcells:
+        features = ["BL1-H", "VL1-H", "VL4-H", "BL3-H"]
+    else:
+        features = ["VL4-H", "RL1-H", "BL1-H"]
     # Apply PCA to the data set
     # setting values of data of selected features to data frame
     xi = data.loc[:, features].values
@@ -338,8 +342,12 @@ def fitPCA(data, features):
     return PCAobj, loading
 
 
-def appPCA(data, features, PCAobj):
+def appPCA(data, PCAobj, Tcells=True):
     """Applies the PCA algorithm to the data set"""
+    if Tcells:
+        features = ["BL1-H", "VL1-H", "VL4-H", "BL3-H"]
+    else:
+        features = ["VL4-H", "RL1-H", "BL1-H"]
     # setting values of data of selected features to data frame
     xi = data.loc[:, features].values
     # STANDARDIZE DATA --> very important to do before applying machine learning algorithm
@@ -351,16 +359,12 @@ def appPCA(data, features, PCAobj):
     return xf
 
 
-def pcaPlt(xf, pstat, features, title, tplate=True):
+def pcaPlt(xf, pstat, ax, Tcells=True):
     """
     Used to plot the score graph.
     Scattered point color gradients are based on range/abundance of pSTAT5 data. Light --> Dark = Less --> More Active
     """
     # PCA
-    if len(features) == 4:
-        name = "T Cells"
-    elif len(features) == 3:
-        name = "NK Cells"
     # Setting x and y values from xf
     x = xf[:, 0]
     y = xf[:, 1]
@@ -371,49 +375,47 @@ def pcaPlt(xf, pstat, features, title, tplate=True):
     # lighter --> darker = less --> more pSTAT5 present
     # Creating correct dimensions
     pstat = np.squeeze(pstat_data)
-    # Determining overall pSTAT5 for a certain fcs data set
-    pstat_mean = np.mean(pstat)
-    print("mean pStat activity: ", pstat_mean)
+    #print("mean pStat activity: ", pstat_mean)
     # Creating a data from of x, y, and pSTAT5 in order to graph using seaborn
     combined = np.stack((x, y, pstat)).T
     df = pd.DataFrame(combined, columns=["PC1", "PC2", "pSTAT5"])
     # Creating plot using seaborn. Cool note: virdis is visible for individuals who are colorblind.
-    _, ax = plt.subplots(figsize=(8, 8))
-    ax.set_title(name + " - PCA - " + str(title), fontsize=20)
-    plt.xlim(-4, 6)
-    plt.ylim(-4, 4)
-    if tplate:
-        sns.scatterplot(x="PC1", y="PC2", hue="pSTAT5", palette="viridis", data=df, s=10, ax=ax, legend=False, hue_norm=(3000, 7000))
-        points = plt.scatter(df["PC1"], df["PC2"], c=df["pSTAT5"], s=0, cmap="viridis", vmin=3000, vmax=7000)  # set style options
+    ax.set_xlim(-5, 5)
+    ax.set_ylim(-5, 5)
+    if Tcells:
+        sns.scatterplot(x="PC1", y="PC2", hue="pSTAT5", palette="viridis", data=df, s=5, ax=ax, legend=False, hue_norm=(0, 40000))
+        points = ax.scatter(df["PC1"], df["PC2"], c=df["pSTAT5"], s=0, cmap="viridis", vmin=0, vmax=40000)  # set style options
     else:
-        sns.scatterplot(x="PC1", y="PC2", hue="pSTAT5", palette="viridis", data=df, s=10, ax=ax, legend=False, hue_norm=(0, 5000))
-        points = plt.scatter(df["PC1"], df["PC2"], c=df["pSTAT5"], s=0, cmap="viridis", vmin=0, vmax=5000)  # set style options
+        sns.scatterplot(x="PC1", y="PC2", hue="pSTAT5", palette="viridis", data=df, s=5, ax=ax, legend=False, hue_norm=(0, 6000))
+        points = ax.scatter(df["PC1"], df["PC2"], c=df["pSTAT5"], s=0, cmap="viridis", vmin=0, vmax=6000)  # set style options
     ax.set_xlabel("PC1", fontsize=15)
     ax.set_ylabel("PC2", fontsize=15)
     # add a color bar
-    plt.colorbar(points)
+    plt.colorbar(points, ax=ax)
 
 
-def loadingPlot(loading, features, title):
+def loadingPlot(loading, ax, Tcells=True):
     """Plot the loading data"""
     # Loading
     # Create graph for loading values
+    if Tcells:
+        features = ["BL1-H", "VL1-H", "VL4-H", "BL3-H"]
+    else:
+        features = ["VL4-H", "RL1-H", "BL1-H"]
+
     x_load = loading[:, 0]
     y_load = loading[:, 1]
 
     # Create figure for the loading plot
-    fig1 = plt.figure(figsize=(8, 8))
-    ax = fig1.add_subplot(1, 1, 1)
     ax.set(xlim=(-1, 1), ylim=(-1, 1))
     ax.set_xlabel("PC1", fontsize=15)
     ax.set_ylabel("PC2", fontsize=15)
-    plt.scatter(x_load, y_load)
-    plt.grid()
+    ax.scatter(x_load, y_load)
+    ax.grid()
 
     for z, feature in enumerate(features):
         # Please note: not the best logic, but there are three features in NK and four features in T cells
-        if len(features) == 4:
-            name = "T Cells"
+        if Tcells:
             if feature == "BL1-H":
                 feature = "Foxp3"
             elif feature == "VL1-H":
@@ -422,20 +424,18 @@ def loadingPlot(loading, features, title):
                 feature = "CD4"
             elif feature == "BL3-H":
                 feature = "CD45RA"
-        if len(features) == 3:
-            name = "NK Cells"
+        else:
             if feature == "VL4-H":
                 feature = "CD3"
             if feature == "RL1-H":
                 feature = "CD8"
             if feature == "BL1-H":
                 feature = "CD56"
-        plt.annotate(str(feature), xy=(x_load[z], y_load[z]))
+        ax.annotate(str(feature), xy=(x_load[z], y_load[z]), fontsize=10)
         #plt.savefig('loading' + str(i) + '.png')
-    ax.set_title(name + " - Loading - " + str(title), fontsize=20)
 
 
-def pcaAll(sampleType, check, titles):
+def pcaAll(sampleType, Tcells=True):
     """
     Use to plot the score and loading graphs for PCA. Assign protein and pstat5 arrays AND score and loading arrays
     This is all the data for each file.
@@ -449,34 +449,26 @@ def pcaAll(sampleType, check, titles):
     xf_array = []
     # create the for loop to file through the data and save to the arrays
     # using the functions created above for a singular file
-    if check == "t":
+    if Tcells:
         for i, sample in enumerate(sampleType):
-            title = titles[i].split("/")
-            title = title[len(title) - 1]
-            data, pstat, features = sampleT(sample)
+            data, pstat, _ = sampleT(sample)
             data_array.append(data)
             pstat_array.append(pstat)
             if i == 0:
-                PCAobj, loading = fitPCA(data, features)
-            xf = appPCA(data, features, PCAobj)
+                PCAobj, loading = fitPCA(data, Tcells)
+            xf = appPCA(data, PCAobj, Tcells)
             xf_array.append(xf)
-            pcaPlt(xf, pstat, features, title, tplate=True)
-            loadingPlot(loading, features, title)
-            plt.show()
-    elif check == "n":
+
+    else:
         for i, sample in enumerate(sampleType):
-            title = titles[i].split("/")
-            title = title[len(title) - 1]
-            data, pstat, features = sampleNK(sample)
+            data, pstat, _ = sampleNK(sample)
             data_array.append(data)
             pstat_array.append(pstat)
             if i == 0:
-                PCAobj, loading = fitPCA(data, features)
-            xf = appPCA(data, features, PCAobj)
-            pcaPlt(xf, pstat, features, title, tplate=False)
-            loadingPlot(loading, features, title)
-            plt.show()
-    return data_array, pstat_array, xf_array
+                PCAobj, loading = fitPCA(data, Tcells)
+            xf = appPCA(data, PCAobj, Tcells)
+            xf_array.append(xf)
+    return data_array, pstat_array, xf_array, loading
 
 # ************************PCA by color (gating+PCA)******************************
 
@@ -486,23 +478,20 @@ def sampleTcolor(smpl):
     # Features are the protein channels of interest when analyzing T cells
     features = ["BL1-H", "VL1-H", "VL4-H", "BL3-H"]
     # Transform to put on log scale
-    cd45dat = smpl[["BL3-H"]]
-    cd45dat = cd45dat.iloc[:, 0]
-    cd45dat = np.log10(cd45dat)
-    tform = smpl.transform("hlog", channels=["BL1-H", "VL1-H", "VL4-H", "BL3-H"])
+    tform = smpl.transform("hlog", channels=["BL1-H", "VL1-H", "VL4-H", "BL3-H", "RL1-H"])
     # Save the data of each column of the protein channels
     data = tform.data[["BL1-H", "VL1-H", "VL4-H", "BL3-H"]][0:]
     # Save pSTAT5 data
     pstat = tform.data[["RL1-H"]][0:]
     colmat = [] * (len(data) + 1)
     for i in range(len(data)):
-        if data.iat[i, 0] > 4.814e+03 and data.iat[i, 0] < 6.258e+03 and data.iat[i, 1] > 3.229e+03 and data.iat[i, 1] < 5.814e+03:
-            if cd45dat[i] > 3.8:
+        if data.iat[i, 0] > 5.115e+03 and data.iat[i, 0] < 6.258e+03 and data.iat[i, 1] > 3.229e+03 and data.iat[i, 1] < 5.814e+03 and data.iat[i, 2] > 6.512e+03:
+            if data.iat[i, 3] > 6300:
                 colmat.append('r')  # Treg naive
             else:
                 colmat.append('darkorange')  # Treg mem
-        elif data.iat[i, 0] > 2.586e+03 and data.iat[i, 0] < 5.115e+03 and data.iat[i, 1] > 3.470e+02 and data.iat[i, 1] < 5.245e+03:
-            if cd45dat[i] > 3.8:
+        elif data.iat[i, 0] > 2.586e+03 and data.iat[i, 0] < 5.115e+03 and data.iat[i, 1] > 3.470e+02 and data.iat[i, 1] < 5.245e+03 and data.iat[i, 2] > 6.512e+03:
+            if data.iat[i, 3] > 6300:
                 colmat.append('g')  # Thelp naive
             else:
                 colmat.append('darkorchid')  # Thelp mem
@@ -528,55 +517,44 @@ def sampleNKcolor(smpl):
         if data.iat[i, 0] > 5.550e03 and data.iat[i, 0] < 6.468e03 and data.iat[i, 2] > 4.861e03 and data.iat[i, 2] < 5.813e03:
             colmat.append('r')  # nk
         elif data.iat[i, 0] > 6.533e03 and data.iat[i, 0] < 7.34e03 and data.iat[i, 2] > 4.899e03 and data.iat[i, 2] < 5.751e03:
-            colmat.append('g')  # bnk
+            colmat.append('darkgreen')  # bnk
         else:
             colmat.append('c')
     return data, pstat, features, colmat
 
 
-def pcaPltColor(xf, pstat, features, title, colormat, tregc=True):
+def pcaPltColor(xf, colormat, ax, Tcells=True):
     """
     Used to plot the score graph.
     Scattered point color gradients are based on range/abundance of pSTAT5 data. Light --> Dark = Less --> More Active
     """
     # PCA
-    if len(features) == 4:
-        name = "T Cells"
-    elif len(features) == 3:
-        name = "NK Cells"
     # Setting x and y values from xf
     x = xf[:, 0]
     y = xf[:, 1]
     # Working with pSTAT5 data --> setting min and max values
-    pstat_data = pstat.values
-    pstat_mean = np.mean(pstat_data)
-    print("mean pStat activity: ", pstat_mean)
-    plt.show()
     # Creating a figure for both scatter and mesh plots for PCA
-    fig = plt.figure(figsize=(8, 8))
-    ax = fig.add_subplot(1, 1, 1)
-    ax.set_xlabel("Principal Component 1", fontsize=15)
-    ax.set_ylabel("Principal Component 2", fontsize=15)
-    ax.set_title(name + " - PCA - " + str(title), fontsize=20)
+    ax.set_xlabel("PC 1", fontsize=15)
+    ax.set_ylabel("PC 2", fontsize=15)
     ax.set(xlim=(-5, 5), ylim=(-5, 5))
     # This is the scatter plot of the cell clusters colored by pSTAT5 data
     # lighter --> darker = less --> more pSTAT5 present
     colormat = np.array(colormat)
-    if tregc:
-        plt.scatter(x[colormat == "c"], y[colormat == "c"], s=1, c="c", label="Other", alpha=0.5)
-        plt.scatter(x[colormat == "g"], y[colormat == "g"], s=1, c="g", label="T Helper Naive", alpha=0.5)
-        plt.scatter(x[colormat == "darkorchid"], y[colormat == "darkorchid"], s=1, c="darkorchid", label="T Helper Memory", alpha=0.5)
-        plt.scatter(x[colormat == "darkorange"], y[colormat == "darkorange"], s=1, c="darkorange", label="T Reg Memory", alpha=0.5)
-        plt.scatter(x[colormat == "r"], y[colormat == "r"], s=1, c="r", label="T Reg Naive", alpha=0.5)
-        plt.legend()
+    if Tcells:
+        ax.scatter(x[colormat == "c"], y[colormat == "c"], s=1, c="c", label="Other", alpha=0.5)
+        ax.scatter(x[colormat == "g"], y[colormat == "g"], s=1, c="g", label="T Helper Naive", alpha=0.5)
+        ax.scatter(x[colormat == "darkorchid"], y[colormat == "darkorchid"], s=1, c="darkorchid", label="T Helper Memory", alpha=0.5)
+        ax.scatter(x[colormat == "darkorange"], y[colormat == "darkorange"], s=1, c="darkorange", label="T Reg Memory", alpha=0.5)
+        ax.scatter(x[colormat == "r"], y[colormat == "r"], s=1, c="r", label="T Reg Naive", alpha=0.5)
+        ax.legend()
     else:
-        plt.scatter(x[colormat == "c"], y[colormat == "c"], s=1, c="c", label="Other", alpha=0.5)
-        plt.scatter(x[colormat == "g"], y[colormat == "g"], s=1, c="g", label="BNK", alpha=0.5)
-        plt.scatter(x[colormat == "r"], y[colormat == "r"], s=1, c="r", label="NK", alpha=0.5)
-        plt.legend()
+        ax.scatter(x[colormat == "c"], y[colormat == "c"], s=1, c="c", label="Other", alpha=0.5)
+        ax.scatter(x[colormat == "darkgreen"], y[colormat == "darkgreen"], s=1, c="g", label="BNK", alpha=0.5)
+        ax.scatter(x[colormat == "r"], y[colormat == "r"], s=1, c="r", label="NK", alpha=0.5)
+        ax.legend()
 
 
-def pcaAllCellType(sampleType, check, titles):
+def pcaAllCellType(sampleType, Tcells=True):
     """
     Use to plot the score and loading graphs for PCA. Assign protein and pstat5 arrays AND score and loading arrays
     This is all the data for each file.
@@ -588,38 +566,31 @@ def pcaAllCellType(sampleType, check, titles):
     data_array = []
     pstat_array = []
     xf_array = []
-    loading_array = []
+    colormat_array = []
 
-    # create the for loop to file through the data and save to the arrays
+    # create the for loop to file through the datfa and save to the arrays
     # using the functions created above for a singular file
-    if check == "t":
+    if Tcells:
         for i, sample in enumerate(sampleType):
-            title = titles[i].split("/")
-            title = title[len(title) - 1]
-            data, pstat, features, colormat = sampleTcolor(sample)
+            data, pstat, _, colormat = sampleTcolor(sample)
             data_array.append(data)
             pstat_array.append(pstat)
             if i == 0:
-                PCAobj, loading = fitPCA(data, features)
-            xf = appPCA(data, features, PCAobj)
+                PCAobj, loading = fitPCA(data, Tcells)
+            xf = appPCA(data, PCAobj, Tcells)
             xf_array.append(xf)
-            loading_array.append(loading)
-            pcaPltColor(xf, pstat, features, title, colormat)  # changed
-            loadingPlot(loading, features, title)
-    elif check == "n":
+            colormat_array.append(colormat)
+    else:
         for i, sample in enumerate(sampleType):
-            title = titles[i].split("/")
-            title = title[len(title) - 1]
-            data, pstat, features, colormat = sampleNKcolor(sample)
+            data, pstat, _, colormat = sampleNKcolor(sample)
             data_array.append(data)
             pstat_array.append(pstat)
             if i == 0:
-                PCAobj, loading = fitPCA(data, features)
-            xf = appPCA(data, features, PCAobj)
-            pcaPltColor(xf, pstat, features, title, colormat)
-            loadingPlot(loading, features, title)
-    plt.show()
-    return data_array, pstat_array, xf_array, loading_array
+                PCAobj, loading = fitPCA(data, Tcells)
+            xf = appPCA(data, PCAobj, Tcells)
+            xf_array.append(xf)
+            colormat_array.append(colormat)
+    return data_array, pstat_array, xf_array, loading, colormat_array
 
 # ************************Dose Response by PCA******************************
 
@@ -649,7 +620,7 @@ def PCADoseResponse(sampleType, PC1Bnds, PC2Bnds, gate, Tcells=True):
         if i == 0:
             PCAobj, _ = fitPCA(data, features)  # only fit to first set
 
-        xf = appPCA(data, features, PCAobj)  # get PC1/2 vals
+        xf = appPCA(data, PCAobj, Tcells)  # get PC1/2 vals
         PCApd = PCdatTransform(xf, pstat)
         PCApd = PCApd[(PCApd['PC1'] >= PC1Bnds[0]) & (PCApd['PC1'] <= PC1Bnds[1]) & (PCApd['PC2'] >= PC2Bnds[0]) & (PCApd['PC2'] <= PC2Bnds[1])]  # remove data that that is not within given PC bounds
         pSTATvals[0, i] = PCApd.loc[:, "pSTAT"].mean()  # take average Pstat activity of data fitting criteria

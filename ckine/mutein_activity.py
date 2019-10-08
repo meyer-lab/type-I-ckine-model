@@ -18,6 +18,7 @@ mutaff = {
 dataMean, _ = import_muteins()
 dataMean.reset_index(inplace=True)
 
+
 def organize_expr_pred(df, cell_name, ligand_name, receptors, muteinC, tps, unkVec):
     """ Appends input dataframe with experimental and predicted activity for a given cell type and mutein. """
 
@@ -39,8 +40,8 @@ def organize_expr_pred(df, cell_name, ligand_name, receptors, muteinC, tps, unkV
         cell_receptors = receptor_expression(receptors, unkVec[17, j], unkVec[20, j], unkVec[19, j], unkVec[21, j])
         pred_data[:, :, j] = calc_dose_response_mutein(unkVec[:, j], mutaff[ligand_name], tps, muteinC, cell_receptors)
         df_pred = pd.DataFrame({'Cells': np.tile(np.array(cell_name), num), 'Ligand': np.tile(np.array(ligand_name), num), 'Time Point': np.tile(
-            tps, 12), 'Concentration': mutein_conc.reshape(num,), 'Activity Type': np.tile(np.array('predicted'), num), 'Replicate': np.tile(np.array(j + 1), num), 
-                                'Activity': pred_data[:, :, j].reshape(num,)})
+            tps, 12), 'Concentration': mutein_conc.reshape(num,), 'Activity Type': np.tile(np.array('predicted'), num), 'Replicate': np.tile(np.array(j + 1), num),
+            'Activity': pred_data[:, :, j].reshape(num,)})
         df = df.append(df_pred, ignore_index=True)
 
     return df
