@@ -7,6 +7,7 @@ import numpy as np
 from .figureCommon import subplotLabel, getSetup
 from ..flow import importF, pcaAll, pcaPlt, appPCA, fitPCA, sampleT, sampleNK, pcaPltColor, pcaAllCellType, loadingPlot
 
+
 def makeFigure():
     """Get a list of the axis objects and create a figure"""
     # Get list of axis objects
@@ -20,12 +21,12 @@ def makeFigure():
 
     dose_ind = np.array([0., 6., 11.])
     Tsample, _ = importF("/home/brianoj/Tplate418", "C")
-    _, pstat_arrayT, _, loadingT = pcaAll(Tsample, Tcells=True) #take out titles req
+    _, pstat_arrayT, _, loadingT = pcaAll(Tsample, Tcells=True)  # take out titles req
     dataT, _, _ = sampleT(Tsample[0])
     PCAobjT, _ = fitPCA(dataT, Tcells=True)
 
     Nksample, _ = importF("/home/brianoj/Nkplate418", "C")
-    _, pstat_arrayNk, _, loadingNk = pcaAll(Nksample, Tcells=False) #take out titles req
+    _, pstat_arrayNk, _, loadingNk = pcaAll(Nksample, Tcells=False)  # take out titles req
     dataNk, _, _ = sampleNK(Nksample[0])
     PCAobjNk, _ = fitPCA(dataNk, Tcells=False)
 
@@ -47,7 +48,9 @@ def makeFigure():
 
     return f
 
+
 def ColPlot(sample, ax, col, Tcells=True):
+    """Displays the PCA of a sample population colored by gating-determined cell types"""
     if Tcells:
         _, _, xf_arrayT, _ = pcaAll(sample, Tcells=True)
         _, _, _, _, colormatT = pcaAllCellType(sample, Tcells=True)
