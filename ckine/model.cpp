@@ -32,7 +32,7 @@ using std::endl;
 using std::cout;
 using adept::adouble;
 
-constexpr double solveTol = 1.0E-4;
+constexpr double solveTol = 1.0E-5;
 
 static void errorHandler(int, const char *, const char *, char *, void *);
 int Jac(double, N_Vector, N_Vector, SUNMatrix, void *, N_Vector, N_Vector, N_Vector);
@@ -46,14 +46,6 @@ std::mutex print_mutex; // mutex to prevent threads printing on top of each othe
 typedef Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, 1>> eigenV;
 typedef Eigen::Map<Eigen::Matrix<double, Nspecies, 1>> eigenVC;
 typedef Eigen::Matrix<double, Nspecies, Eigen::Dynamic> x0JacM;
-
-
-extern "C" void dydt_C(double *y_in, double, double *dydt_out, double *rxn_in) {
-	std::vector<double> v(rxn_in, rxn_in + Nparams);
-	ratesS<double> r(v);
-
-	dy_dt(y_in, &r.surface, dydt_out, r.ILs.data());
-}
 
 
 extern "C" void fullModel_C(const double * const y_in, double, double *dydt_out, double *rxn_in) {
@@ -113,7 +105,7 @@ public:
 		}
 		
 		// Set the scalar relative and absolute tolerances
-		if (CVodeSStolerances(cvode_mem, 1.0E-9, 1.0E-9) < 0) {
+		if (CVodeSStolerances(cvode_mem, 1.0E-11, 1.0E-9) < 0) {
 			throw std::runtime_error(string("Error calling CVodeSStolerances in solver_setup."));
 		}
 
