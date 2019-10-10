@@ -12,6 +12,7 @@ def makeFigure():
     """Get a list of the axis objects and create a figure"""
     # Get list of axis objects
     ax, f = getSetup((13, 10), (3, 4))
+    Titles = [" 84 nM IL-2", " 0.345 nM IL-2", " Zero Treatment"]
     ax[10].axis('off')
     ax[11].axis('off')
 
@@ -35,13 +36,17 @@ def makeFigure():
         dataT, _, _ = sampleT(Tsample[col])
         xfT = appPCA(dataT, PCAobjT, Tcells=True)
         pcaPlt(xfT, pstat_arrayT[col], ax[i], Tcells=True)
+        ax[i].set_title("T-reg" + Titles[i], fontsize=15)
 
         dataNk, _, _ = sampleNK(Nksample[col])
         xfNk = appPCA(dataNk, PCAobjNk, Tcells=False)
         pcaPlt(xfNk, pstat_arrayNk[col], ax[i + 4], Tcells=False)
+        ax[i + 4].set_title("Nk" + Titles[i], fontsize=15)
 
     loadingPlot(loadingT, ax=ax[3], Tcells=True)
+    ax[3].set_title("T-reg Loadings", fontsize=15)
     loadingPlot(loadingNk, ax=ax[7], Tcells=False)
+    ax[7].set_title("T-reg Loadings", fontsize=15)
 
     ColPlot(Tsample, ax, 4, True)
     ColPlot(Nksample, ax, 4, False)
@@ -50,12 +55,14 @@ def makeFigure():
 
 
 def ColPlot(sample, ax, col, Tcells=True):
-    """Displays the PCA of a sample population colored by gating-determined cell types"""
+    """Fills in an ax with a colored by gating PCA plot"""
     if Tcells:
         _, _, xf_arrayT, _ = pcaAll(sample, Tcells=True)
         _, _, _, _, colormatT = pcaAllCellType(sample, Tcells=True)
         pcaPltColor(xf_arrayT[col], colormatT[col], ax=ax[8], Tcells=True)
+        ax[8].set_title("T-reg PCA by Gating", fontsize=15)
     else:
         _, _, xf_arrayNk, _ = pcaAll(sample, Tcells=False)
         _, _, _, _, colormatNk = pcaAllCellType(sample, Tcells=False)
         pcaPltColor(xf_arrayNk[col], colormatNk[col], ax=ax[9], Tcells=False)
+        ax[9].set_title("Nk PCA by Gating", fontsize=15)

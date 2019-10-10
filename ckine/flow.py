@@ -375,7 +375,6 @@ def pcaPlt(xf, pstat, ax, Tcells=True):
     # lighter --> darker = less --> more pSTAT5 present
     # Creating correct dimensions
     pstat = np.squeeze(pstat_data)
-    #print("mean pStat activity: ", pstat_mean)
     # Creating a data from of x, y, and pSTAT5 in order to graph using seaborn
     combined = np.stack((x, y, pstat)).T
     df = pd.DataFrame(combined, columns=["PC1", "PC2", "pSTAT5"])
@@ -391,7 +390,8 @@ def pcaPlt(xf, pstat, ax, Tcells=True):
     ax.set_xlabel("PC1", fontsize=15)
     ax.set_ylabel("PC2", fontsize=15)
     # add a color bar
-    plt.colorbar(points, ax=ax)
+    cbar = plt.colorbar(points, ax=ax)
+    cbar.set_label('pSTAT Level')
 
 
 def loadingPlot(loading, ax, Tcells=True):
@@ -431,8 +431,7 @@ def loadingPlot(loading, ax, Tcells=True):
                 feature = "CD8"
             if feature == "BL1-H":
                 feature = "CD56"
-        ax.annotate(str(feature), xy=(x_load[z], y_load[z]), fontsize=10)
-        #plt.savefig('loading' + str(i) + '.png')
+        ax.annotate(str(feature), xy=(x_load[z], y_load[z]), fontsize=8)
 
 
 def pcaAll(sampleType, Tcells=True):
@@ -608,17 +607,17 @@ def PCADoseResponse(sampleType, PC1Bnds, PC2Bnds, gate, Tcells=True):
 
     for i, sample in enumerate(sampleType):
         if Tcells:
-            data, pstat, features = sampleT(sample)  # retrieve data
+            data, pstat, _ = sampleT(sample)  # retrieve data
             statcol = 'RL1-H'
         else:
-            data, pstat, features = sampleNK(sample)
+            data, pstat, _ = sampleNK(sample)
             statcol = 'BL2-H'
         if gate:
             data = alldata[i]
             pstat = data[[statcol]]
 
         if i == 0:
-            PCAobj, _ = fitPCA(data, features)  # only fit to first set
+            PCAobj, loading = fitPCA(data, Tcells)  # only fit to first set
 
         xf = appPCA(data, PCAobj, Tcells)  # get PC1/2 vals
         PCApd = PCdatTransform(xf, pstat)
@@ -626,19 +625,8 @@ def PCADoseResponse(sampleType, PC1Bnds, PC2Bnds, gate, Tcells=True):
         pSTATvals[0, i] = PCApd.loc[:, "pSTAT"].mean()  # take average Pstat activity of data fitting criteria
 
     pSTATvals = pSTATvals.flatten()
-    _, ax = plt.subplots(figsize=(8, 8))
-    plt.plot(dosemat, pSTATvals, ".--", color="navy")
-    plt.grid()
-    if gate:
-        ax.set_title("PCA Gated Dose Response Curve for PC1 " + str(PC1Bnds) + " And PC2 " + str(PC2Bnds) + " for " + gate.__name__ + "Cells", fontsize=10)
-    else:
-        ax.set_title("PCA Gated Dose Response Curve for PC1 " + str(PC1Bnds) + " And PC2 " + str(PC2Bnds), fontsize=13)
-    ax.set_xscale('log')
-    ax.set_xlabel("Cytokine Dosage (log10[nM])", fontsize=15)
-    ax.set_ylabel("Average Pstat Activity", fontsize=15)
-    ax.set(xlim=(0.0001, 100))
-    plt.show()
-    return pSTATvals, dosemat
+
+    return pSTATvals, dosemat, loading
 
 
 def PCdatTransform(xf, pstat):
@@ -650,7 +638,7 @@ def PCdatTransform(xf, pstat):
     return PCApd
 
 
-def StatGini(sampleType, ax, gate, Title, Tcells=True):
+def StatGini(sampleType, ax, gate, Tcells=True):
     """
     Define the Gini Coefficient of Pstat Vals Across a timepoint for either whole or gated population.
     Takes a folder of samples, a timepoint (string), a boolean check for cell type and an optional gate parameter.
@@ -712,7 +700,7 @@ def StatGini(sampleType, ax, gate, Title, Tcells=True):
     ax.set_ylabel("Gini Coefficient")
     ax.set(xlim=(0.0001, 100))
     ax.set(ylim=(0., 1))
-    ax.set_title(Title)
+
     return ginis, dosemat
 
 
@@ -739,7 +727,7 @@ def hill_equation(x, x0, solution=0):
     return (A * xk / (1.0 + xk)) - solution + floor
 
 
-def EC50_PC_Scan(sampleType, Timepoint, min_max_pts, gate, Tcells=True, PC1=True):
+def EC50_PC_Scan(sampleType, min_max_pts, ax, gate, Tcells=True, PC1=True):
     """Scans along one Principal component and returns EC50 for slices along that Axis"""
     x0 = [1, 2., 5000., 3000.]  # would put gating here
     EC50s = np.zeros([1, min_max_pts[2]])
@@ -751,22 +739,20 @@ def EC50_PC_Scan(sampleType, Timepoint, min_max_pts, gate, Tcells=True, PC1=True
             PC1Bnds, PC2Bnds = np.array([scanspace[i], scanspace[i + 1]]), axrange
         else:
             PC2Bnds, PC1Bnds = np.array([scanspace[i], scanspace[i + 1]]), axrange
-        pSTATs, doses = PCADoseResponse(sampleType, PC1Bnds, PC2Bnds, gate, Tcells)
+        pSTATs, doses, loading = PCADoseResponse(sampleType, PC1Bnds, PC2Bnds, gate, Tcells)
         doses = np.log10(doses.astype(np.float) * 1e4)
         EC50s[0, i] = nllsq_EC50(x0, doses, pSTATs)
 
     EC50s = EC50s.flatten() - 4  # account for 10^4 multiplication
-    _, ax = plt.subplots(figsize=(8, 8))
-    plt.plot(scanspace[:-1] + (min_max_pts[1] - min_max_pts[0]) / (2 * min_max_pts[2]), EC50s, ".--", color="navy")
-    plt.grid()
-    if gate:
-        Timepoint = Timepoint + " for " + gate.__name__ + " cells"
+    ax.plot(scanspace[:-1] + (min_max_pts[1] - min_max_pts[0]) / (2 * min_max_pts[2]), EC50s, ".--", color="navy")
+    ax.grid()
     if PC1:
-        ax.set_title("EC50s along PC1 for " + Timepoint, fontsize=20)
+        ax.set_xlabel("PC1 Space")
     else:
-        ax.set_title("EC50s along PC2 for " + Timepoint, fontsize=20)
-    ax.set_xlabel("PC Space", fontsize=15)
-    ax.set_ylabel("log[EC50] (nM)", fontsize=15)
+        ax.set_xlabel("PC2 Space")
+    ax.set_ylabel("log[EC50] (nM)")
     ax.set(ylim=(-3, 3))
     ax.set(xlim=(min_max_pts[0], min_max_pts[1]))
-    plt.show()
+    ax.grid()
+
+    return loading
