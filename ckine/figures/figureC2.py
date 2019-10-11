@@ -2,11 +2,13 @@
 This creates Figure 1 for Single Cell FC data analysis. Examples of PCA loadings/scores plots and comparisons to gating.
 """
 
+import os
 import string
 import matplotlib.lines as mlines
 from .figureCommon import subplotLabel, getSetup
 from ..flow import importF, treg, tregMem, tregNaive, nonTreg, THelpMem, THelpN, nk, StatGini
 
+path_here = os.path.dirname(os.path.dirname(__file__))
 
 def makeFigure():
     """Get a list of the axis objects and create a figure"""
@@ -19,8 +21,8 @@ def makeFigure():
 
     gates = [False, treg, tregMem, tregNaive, nonTreg, THelpMem, THelpN]
     Titles = ["Tcells", "T-regs", "Mem Treg", "Naive Treg", "T-helper", "Mem Th", "Naive Th"]
-    Tsample, _ = importF("/home/brianoj/Tplate418", "B")
-    Nksample, _ = importF("/home/brianoj/Nkplate418", "B")
+    Tsample, _ = importF(path_here +  "/data/flow/2019-04-18 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - Treg plate - NEW PBMC LOT/", "B")
+    Nksample, _ = importF(path_here + "/data/flow/2019-03-15 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - NK plate/", "B")
     for i, gate in enumerate(gates):
         StatGini(Tsample, ax[i], gate, Tcells=True)
         ax[i].set_title(Titles[i])

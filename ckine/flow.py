@@ -25,11 +25,11 @@ def importF(pathname, WellRow):
     # Read in user input for file path and assign to array file
     pathlist = Path(r"" + str(pathname)).glob("**/*.fcs")
     for path in pathlist:
-        path_in_str = str(path)
-        wellID = path_in_str.split("_")[1]
+        wellID = path.name.split("_")[1]
         if wellID[0] == WellRow:
-            file.append(path_in_str)
+            file.append(str(path))
     file.sort()
+    assert file != []
     # Go through each file and assign the file contents to entry in the array sample
     for entry in file:
         sample.append(FCMeasurement(ID="Test Sample" + str(z), datafile=entry))

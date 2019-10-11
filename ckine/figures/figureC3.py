@@ -2,10 +2,12 @@
 This creates Figure 1 for Single Cell FC data analysis. Examples of PCA loadings/scores plots and comparisons to gating.
 """
 
+import os
 import string
 from .figureCommon import subplotLabel, getSetup
 from ..flow import importF, treg, nonTreg, nk, EC50_PC_Scan, loadingPlot
 
+path_here = os.path.dirname(os.path.dirname(__file__))
 
 def makeFigure():
     """Get a list of the axis objects and create a figure"""
@@ -22,8 +24,8 @@ def makeFigure():
 
     gates = [False, treg, nonTreg]
     Titles = ["Tcells", "T-regs", "T Helper"]
-    Tsample, _ = importF("/home/brianoj/Tplate418", "A")
-    Nksample, _ = importF("/home/brianoj/Nkplate418", "A")
+    Tsample, _ = importF(path_here +  "/data/flow/2019-04-18 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - Treg plate - NEW PBMC LOT/", "A")
+    Nksample, _ = importF(path_here + "/data/flow/2019-03-15 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - NK plate/", "A")
 
     for i, gate in enumerate(gates):
         EC50_PC_Scan(Tsample, PCscanVecT, ax[i], gate, Tcells=True, PC1=True)
