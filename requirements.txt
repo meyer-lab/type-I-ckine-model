@@ -4,6 +4,7 @@ scipy==1.3.0
 seaborn==0.9.0
 numpy==1.16.4
 pytest
+pymc3==3.7
 hypothesis==4.28.2
 hypothesis-numpy==2.0.0
 tensorly==0.4.3
