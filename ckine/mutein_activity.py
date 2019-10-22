@@ -5,18 +5,22 @@ A file that includes functions for calculating mutein activity.
 import numpy as np
 import pandas as pd
 from scipy.optimize import least_squares
-from .imports import import_muteins
-from .model import receptor_expression, runIL2simple
+from .imports import import_muteins, import_pstat
+from .model import receptor_expression, runIL2simple, runCkineU, getTotalActiveCytokine
 
 mutaff = {
     "IL2-060": [1., 1., 5.],  # Wild-type, but dimer
     "IL2-062": [1., 15., 5.],  # Weaker b-g
     "IL2-088": [13., 1., 5.],  # Weaker CD25
-    "IL2-097": [13., 15., 5.]  # Both
+    "IL2-097": [13., 15., 5.],  # Both
+    "IL2": [1., 1., 5.],
+    "IL15": [1., 1., 5.]
 }
 
 dataMean, _ = import_muteins()
 dataMean.reset_index(inplace=True)
+_, _, _, _, pstat_df = import_pstat()
+dataMean = dataMean.append(pstat_df, ignore_index=True)
 
 
 def organize_expr_pred(df, cell_name, ligand_name, receptors, muteinC, tps, unkVec):
@@ -38,23 +42,32 @@ def organize_expr_pred(df, cell_name, ligand_name, receptors, muteinC, tps, unkV
     pred_data = np.zeros((12, 4, unkVec.shape[1]))
     for j in range(unkVec.shape[1]):
         cell_receptors = receptor_expression(receptors, unkVec[17, j], unkVec[20, j], unkVec[19, j], unkVec[21, j])
-        pred_data[:, :, j] = calc_dose_response_mutein(unkVec[:, j], mutaff[ligand_name], tps, muteinC, cell_receptors)
+        pred_data[:, :, j] = calc_dose_response_mutein(unkVec[:, j], mutaff[ligand_name], tps, muteinC, ligand_name, cell_receptors)
         df_pred = pd.DataFrame({'Cells': np.tile(np.array(cell_name), num), 'Ligand': np.tile(np.array(ligand_name), num), 'Time Point': np.tile(
             tps, 12), 'Concentration': mutein_conc.reshape(num,), 'Activity Type': np.tile(np.array('predicted'), num), 'Replicate': np.tile(np.array(j + 1), num),
-            'Activity': pred_data[:, :, j].reshape(num,)})
+                                'Activity': pred_data[:, :, j].reshape(num,)})
         df = df.append(df_pred, ignore_index=True)
 
     return df
 
 
-def calc_dose_response_mutein(unkVec, input_params, tps, muteinC, cell_receptors):
+def calc_dose_response_mutein(unkVec, input_params, tps, muteinC, mutein_name, cell_receptors):
     """ Calculates activity for a given cell type at various mutein concentrations and timepoints. """
 
     total_activity = np.zeros((len(muteinC), len(tps)))
 
     # loop for each mutein concentration
     for i, conc in enumerate(muteinC):
-        active_ckine = runIL2simple(unkVec, input_params, conc, tps=tps, input_receptors=cell_receptors)
+        if mutein_name == 'IL15':
+            unkVec[1] = conc
+            unkVec[22:25] = cell_receptors  # set receptor expression for IL2Ra, IL2Rb, gc
+            unkVec[25] = 0.0  # we never observed any IL-15Ra
+            yOut = runCkineU(tps, unkVec)
+            active_ckine = np.zeros(yOut.shape[0])
+            for j in range(yOut.shape[0]):
+                active_ckine[j] = getTotalActiveCytokine(1, yOut[j, :])
+        else:
+            active_ckine = runIL2simple(unkVec, input_params, conc, tps=tps, input_receptors=cell_receptors)
         total_activity[i, :] = np.reshape(active_ckine, (-1, 4))  # save the activity from this concentration for all 4 tps
 
     return total_activity

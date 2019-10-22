@@ -9,6 +9,7 @@ from ..flow import importF, treg, nonTreg, nk, EC50_PC_Scan, loadingPlot
 
 path_here = os.path.dirname(os.path.dirname(__file__))
 
+
 def makeFigure():
     """Get a list of the axis objects and create a figure"""
     # Get list of axis objects
@@ -24,7 +25,7 @@ def makeFigure():
 
     gates = [False, treg, nonTreg]
     Titles = ["Tcells", "T-regs", "T Helper"]
-    Tsample, _ = importF(path_here +  "/data/flow/2019-04-18 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - Treg plate - NEW PBMC LOT/", "A")
+    Tsample, _ = importF(path_here + "/data/flow/2019-04-18 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - Treg plate - NEW PBMC LOT/", "A")
     Nksample, _ = importF(path_here + "/data/flow/2019-03-15 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - NK plate/", "A")
 
     for i, gate in enumerate(gates):

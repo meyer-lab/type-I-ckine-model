@@ -746,6 +746,7 @@ def EC50_PC_Scan(sampleType, min_max_pts, ax, gate, Tcells=True, PC1=True):
     EC50s = EC50s.flatten() - 4  # account for 10^4 multiplication
     ax.plot(scanspace[:-1] + (min_max_pts[1] - min_max_pts[0]) / (2 * min_max_pts[2]), EC50s, ".--", color="navy")
     ax.grid()
+
     if PC1:
         ax.set_xlabel("PC1 Space")
     else:

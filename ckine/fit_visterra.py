@@ -36,7 +36,7 @@ class pSTAT_activity:  # pylint: disable=too-few-public-methods
         self.ts = np.array([0.5, 1.0, 2.0, 4.0]) * 60.0
         # might have to move these lines into model class and pass the relevant data as function args
         _, self.receptor_data, self.cell_names_receptor = import_Rexpr()
-        self.cytokC, self.cell_names_pstat, self.IL2_data, self.IL15_data = import_pstat()
+        self.cytokC, self.cell_names_pstat, self.IL2_data, self.IL15_data, _ = import_pstat()
 
         self.cytokM = np.zeros((self.cytokC.size * 2, 6), dtype=np.float64)
         self.cytokM[0: self.cytokC.size, 0] = self.cytokC
