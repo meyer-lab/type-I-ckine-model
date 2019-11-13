@@ -110,14 +110,20 @@ def nk():
     nk_gate = nk1 & nk2
     return nk_gate
 
-
 def nkt():
     """Function for creating and returning the NKT gate"""
-    # Bright NK cells: Take quad gates for bright NK cells and combine them to create single, overall bright NK gate
-    nkt1 = QuadGate((7.342e03, 4.899e03), ("BL1-H", "VL4-H"), region="top left", name="nkt1")
-    nkt2 = QuadGate((6.533e03, 5.751e03), ("BL1-H", "VL4-H"), region="bottom right", name="nkt2")
+    nkt1 = QuadGate((6.758e03, 6.021e03), ("BL1-H", "VL4-H"), region="top left", name="nkt1")
+    nkt2 = QuadGate((5.550e03, 7.013e03), ("BL1-H", "VL4-H"), region="bottom right", name="nkt2")
     nkt_gate = nkt1 & nkt2
     return nkt_gate
+
+def bnk():
+    """Function for creating and returning the BNK gate"""
+    # Bright NK cells: Take quad gates for bright NK cells and combine them to create single, overall bright NK gate
+    bnk1 = QuadGate((7.342e03, 4.899e03), ("BL1-H", "VL4-H"), region="top left", name="bnk1")
+    bnk2 = QuadGate((6.533e03, 5.751e03), ("BL1-H", "VL4-H"), region="bottom right", name="bnk2")
+    bnk_gate = bnk1 & bnk2
+    return bnk_gate
 
 
 def cd():
@@ -202,7 +208,7 @@ def tcells(sample_i, treg_gate, nonTreg_gate, title):
     ax.legend([bar_T, bar_NT], ("T Reg", "Non T Reg"), loc="upper left")
 
 
-def nk_nkt_plot(sample_i, nk_gate, nkt_gate, title):
+def nk_bnk_plot(sample_i, nk_gate, bnk_gate, title):
     """
     Function that plots the graph of NK and Bright NK cells (both are determined by same x, y-axis). Arguemnt 1: current sample (a single file).
     Argument 2: the gate for NK. Argument 3: the gate for bright NK.
@@ -215,17 +221,17 @@ def nk_nkt_plot(sample_i, nk_gate, nkt_gate, title):
     nk_cells = smpl.gate(nk_gate)
     # CD56 Bright NK
     # Apply Bright NK gate to overall data --> step that determines which cells are Bright NK
-    nkt_cells = smpl.gate(nkt_gate)
+    bnk_cells = smpl.gate(bnk_gate)
 
     _, ax1 = plt.subplots()
     ax1.set_title("CD56 BrightNK + NK - Gating - " + str(title), fontsize=12)
     nk_cells.plot(["BL1-H", "VL4-H"], color="y", label="NK")
-    nkt_cells.plot(["BL1-H", "VL4-H"], color="g", label="Bright NK")
+    bnk_cells.plot(["BL1-H", "VL4-H"], color="g", label="Bright NK")
     smpl.plot(["BL1-H", "VL4-H"])
 
     bar_NK = ax1.bar(np.arange(0, 10), np.arange(1, 11), color="y")
-    bar_NKT = ax1.bar(np.arange(0, 10), np.arange(30, 40), bottom=np.arange(1, 11), color="g")
-    ax1.legend([bar_NK, bar_NKT], ("NK", "NKT"), loc="upper left")
+    bar_BNK = ax1.bar(np.arange(0, 10), np.arange(30, 40), bottom=np.arange(1, 11), color="g")
+    ax1.legend([bar_NK, bar_BNK], ("NK", "BNK"), loc="upper left")
 
 
 def cd_plot(sample_i, cd_gate, title):
@@ -281,7 +287,7 @@ def plotAll(sampleType, check, gate1, gate2, titles):
         for i, sample in enumerate(sampleType):
             title = titles[i].split("/")
             title = title[len(title) - 1]
-            nk_nkt_plot(sample, gate1, gate2, title)
+            nk_bnk_plot(sample, gate1, gate2, title)
     elif check == "c":
         for i, sample in enumerate(sampleType):
             title = titles[i].split("/")
@@ -382,11 +388,11 @@ def pcaPlt(xf, pstat, ax, Tcells=True):
     ax.set_xlim(-5, 5)
     ax.set_ylim(-5, 5)
     if Tcells:
-        sns.scatterplot(x="PC1", y="PC2", hue="pSTAT5", palette="viridis", data=df, s=5, ax=ax, legend=False, hue_norm=(0, 40000))
-        points = ax.scatter(df["PC1"], df["PC2"], c=df["pSTAT5"], s=0, cmap="viridis", vmin=0, vmax=40000)  # set style options
+        sns.scatterplot(x="PC1", y="PC2", hue="pSTAT5", palette="viridis", data=df, s=5, ax=ax, legend=False, hue_norm=(0, 30000))
+        points = ax.scatter(df["PC1"], df["PC2"], c=df["pSTAT5"], s=0, cmap="viridis", vmin=0, vmax=30000)  # set style options
     else:
-        sns.scatterplot(x="PC1", y="PC2", hue="pSTAT5", palette="viridis", data=df, s=5, ax=ax, legend=False, hue_norm=(0, 6000))
-        points = ax.scatter(df["PC1"], df["PC2"], c=df["pSTAT5"], s=0, cmap="viridis", vmin=0, vmax=6000)  # set style options
+        sns.scatterplot(x="PC1", y="PC2", hue="pSTAT5", palette="viridis", data=df, s=5, ax=ax, legend=False, hue_norm=(0, 8000))
+        points = ax.scatter(df["PC1"], df["PC2"], c=df["pSTAT5"], s=0, cmap="viridis", vmin=0, vmax=8000)  # set style options
     ax.set_xlabel("PC1", fontsize=15)
     ax.set_ylabel("PC2", fontsize=15)
     # add a color bar
@@ -517,9 +523,11 @@ def sampleNKcolor(smpl):
         if data.iat[i, 0] > 5.550e03 and data.iat[i, 0] < 6.468e03 and data.iat[i, 2] > 4.861e03 and data.iat[i, 2] < 5.813e03:
             colmat.append('r')  # nk
         elif data.iat[i, 0] > 6.533e03 and data.iat[i, 0] < 7.34e03 and data.iat[i, 2] > 4.899e03 and data.iat[i, 2] < 5.751e03:
-            colmat.append('darkgreen')  # nkt
+            colmat.append('darkgreen')  # bnk
         elif data.iat[i, 0] > 5.976e03 and data.iat[i, 0] < 7.541e03 and data.iat[i, 1] > 6.825e03 and data.iat[i, 1] < 9.016e03:
             colmat.append('blueviolet') # cd8+
+        elif data.iat[i, 0] > 5.50e03 and data.iat[i, 0] < 6.758e03 and data.iat[i, 2] >6.021e03 and data.iat[i, 2] < 7.013e03:
+            colmat.append('midnightblue') # nkt
         else:
             colmat.append('c')
     return data, pstat, features, colmat
@@ -548,13 +556,14 @@ def pcaPltColor(xf, colormat, ax, Tcells=True):
         ax.scatter(x[colormat == "darkorchid"], y[colormat == "darkorchid"], s=0.5, c="darkorchid", label="T Helper Memory", alpha=0.3, edgecolors='none')
         ax.scatter(x[colormat == "darkorange"], y[colormat == "darkorange"], s=0.5, c="darkorange", label="T Reg Memory", alpha=0.3, edgecolors='none')
         ax.scatter(x[colormat == "r"], y[colormat == "r"], s=0.5, c="r", label="T Reg Naive", alpha=0.3, edgecolors='none')
-        ax.legend()
+        ax.legend(markerscale=6.)
     else:
-        ax.scatter(x[colormat == "c"], y[colormat == "c"], s=0.5, c="c", label="Other", alpha=0.3, edgecolors='none')
-        ax.scatter(x[colormat == "darkgreen"], y[colormat == "darkgreen"], s=0.5, c="g", label="NKT", alpha=0.3, edgecolors='none')
+        ax.scatter(x[colormat == "darkgreen"], y[colormat == "darkgreen"], s=0.5, c="g", label="BNK", alpha=0.3, edgecolors='none')
         ax.scatter(x[colormat == "r"], y[colormat == "r"], s=0.5, c="r", label="NK", alpha=0.3, edgecolors='none')
         ax.scatter(x[colormat == "blueviolet"], y[colormat == "blueviolet"], s=0.5, c="blueviolet", label="CD8+", alpha=0.3, edgecolors='none')
-        ax.legend()
+        ax.scatter(x[colormat == "midnightblue"], y[colormat == "midnightblue"], s=0.5, c="midnightblue", label="NKT", alpha=0.3, edgecolors='none')
+        ax.scatter(x[colormat == "c"], y[colormat == "c"], s=0.5, c="c", label="Other", alpha=0.3, edgecolors='none')
+        ax.legend(markerscale=6.)
 
 
 def pcaAllCellType(sampleType, Tcells=True):
