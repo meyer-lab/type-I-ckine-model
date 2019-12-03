@@ -6,7 +6,7 @@ import time
 import matplotlib
 matplotlib.use('AGG')
 
-fdir = './Manuscript/Figures/'
+fdir = './output/'
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
