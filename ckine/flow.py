@@ -110,12 +110,14 @@ def nk():
     nk_gate = nk1 & nk2
     return nk_gate
 
+
 def nkt():
     """Function for creating and returning the NKT gate"""
     nkt1 = QuadGate((6.758e03, 6.021e03), ("BL1-H", "VL4-H"), region="top left", name="nkt1")
     nkt2 = QuadGate((5.550e03, 7.013e03), ("BL1-H", "VL4-H"), region="bottom right", name="nkt2")
     nkt_gate = nkt1 & nkt2
     return nkt_gate
+
 
 def bnk():
     """Function for creating and returning the BNK gate"""
@@ -518,16 +520,16 @@ def sampleNKcolor(smpl):
     pstat = tform.data[["BL2-H"]][0:]
     # Create a section for assigning colors to each data point of each cell population --> in this case NK cells
     colmat = [] * (len(data) + 1)
-    
+
     for i in range(len(data)):
         if data.iat[i, 0] > 5.550e03 and data.iat[i, 0] < 6.468e03 and data.iat[i, 2] > 4.861e03 and data.iat[i, 2] < 5.813e03:
             colmat.append('r')  # nk
         elif data.iat[i, 0] > 6.533e03 and data.iat[i, 0] < 7.34e03 and data.iat[i, 2] > 4.899e03 and data.iat[i, 2] < 5.751e03:
             colmat.append('darkgreen')  # bnk
         elif data.iat[i, 0] > 5.976e03 and data.iat[i, 0] < 7.541e03 and data.iat[i, 1] > 6.825e03 and data.iat[i, 1] < 9.016e03:
-            colmat.append('blueviolet') # cd8+
-        elif data.iat[i, 0] > 5.50e03 and data.iat[i, 0] < 6.758e03 and data.iat[i, 2] >6.021e03 and data.iat[i, 2] < 7.013e03:
-            colmat.append('midnightblue') # nkt
+            colmat.append('blueviolet')  # cd8+
+        elif data.iat[i, 0] > 5.50e03 and data.iat[i, 0] < 6.758e03 and data.iat[i, 2] > 6.021e03 and data.iat[i, 2] < 7.013e03:
+            colmat.append('midnightblue')  # nkt
         else:
             colmat.append('c')
     return data, pstat, features, colmat
