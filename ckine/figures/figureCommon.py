@@ -8,7 +8,6 @@ import matplotlib.cm as cm
 from matplotlib import gridspec, pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
-from ..tensor import find_R2X
 from ..imports import import_pstat
 
 
@@ -66,20 +65,6 @@ def set_bounds(ax):
 
     ax.set_xlim(-x_max, x_max)
     ax.set_ylim(-y_max, y_max)
-
-
-def plot_R2X(ax, tensor, factors_list):
-    """Function to plot R2X bar graph."""
-    R2X_array = list()
-    for _, factors in enumerate(factors_list):
-        R2X_array.append(find_R2X(tensor, factors))
-
-    ax.plot(range(1, len(factors_list) + 1), R2X_array, 'ko', label='Overall R2X')
-    ax.set_ylabel('R2X')
-    ax.set_xlabel('Number of Components')
-    ax.set_ylim(0, 1.05)
-    ax.set_xticks(np.arange(1, len(factors_list) + 1))
-    ax.set_xticklabels(np.arange(1, len(factors_list) + 1))
 
 
 def subplotLabel(ax, letter, hstretch=1, ystretch=1):
