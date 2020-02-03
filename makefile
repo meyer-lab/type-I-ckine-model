@@ -1,10 +1,10 @@
 SHELL := /bin/bash
 
-flist = B1 B2 B3 B4 B5 C1 C2 C3
+flist = C1 C2 C3
 
 .PHONY: clean test all testprofile testcover spell
 
-all: ckine/ckine.so output/manuscript.html output/manuscript.pdf pylint.log
+all: output/manuscript.html output/manuscript.pdf pylint.log
 
 venv: venv/bin/activate
 
@@ -13,7 +13,7 @@ venv/bin/activate: requirements.txt
 	. venv/bin/activate && pip install -Uqr requirements.txt
 	touch venv/bin/activate
 
-output/figure%.svg: venv genFigures.py ckine/ckine.so ckine/figures/figure%.py
+output/figure%.svg: venv genFigures.py ckine/figures/figure%.py
 	mkdir -p ./Manuscript/Figures
 	. venv/bin/activate && ./genFigures.py $*
 
@@ -54,18 +54,14 @@ output/manuscript.pdf: venv output/manuscript.md $(patsubst %, output/figure%.sv
     	--include-after-body=common/templates/manubot/default.html \
     	--output=output/manuscript.pdf output/manuscript.md
 
-ckine/ckine.so: gcSolver/model.cpp gcSolver/model.hpp gcSolver/reaction.hpp gcSolver/makefile
-	cd ./gcSolver && make ckine.so
-	cp ./gcSolver/ckine.so ./ckine/ckine.so
-
 clean:
 	mv output/requests-cache.sqlite requests-cache.sqlite || true
 	rm -rf prof output coverage.xml .coverage .coverage* junit.xml coverage.xml profile profile.svg pylint.log
 	mkdir output
 	mv requests-cache.sqlite output/requests-cache.sqlite || true
 
-	rm -f ckine/ckine.so profile.p* stats.dat .coverage nosetests.xml coverage.xml testResults.xml
-	rm -rf html doxy.log graph_all.svg valgrind.xml venv ./ckine/data/flow
+	rm -f profile.p* stats.dat .coverage nosetests.xml coverage.xml testResults.xml
+	rm -rf html doxy.log graph_all.svg venv ./ckine/data/flow
 	find -iname "*.pyc" -delete
 
 spell: manuscript/*.md
@@ -78,10 +74,10 @@ download: venv
 	unzip -qd ./ckine/data/flow/ './ckine/data/flow/2019-03-15 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - NK plate.zip'
 	unzip -qd ./ckine/data/flow/ './ckine/data/flow/2019-04-18 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - Treg plate - NEW PBMC LOT.zip'
 
-test: venv ckine/ckine.so
+test: venv
 	. venv/bin/activate && pytest
 
-testcover: venv ckine/ckine.so
+testcover: venv
 	. venv/bin/activate && pytest --junitxml=junit.xml --cov-branch --cov=ckine --cov-report xml:coverage.xml
 
 pylint.log: venv common/pylintrc

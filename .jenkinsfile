@@ -6,7 +6,7 @@ pipeline {
   }
   stages {
     stage('Clean') { steps { sh 'make clean && git submodule update --init --recursive' } }
-    stage('Venv') { steps { sh 'make venv && make ckine/ckine.so' } }
+    stage('Venv') { steps { sh 'make venv' } }
     stage('Download') {
       steps {
         withCredentials([string(credentialsId: 'SYNAPSE_APIKEY', variable: 'SYNAPSE_APIKEY')]) {

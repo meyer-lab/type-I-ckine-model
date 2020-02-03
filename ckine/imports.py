@@ -4,7 +4,6 @@ from os.path import join
 import numpy as np
 import scipy as sp
 import pandas as pds
-from .model import nParams
 
 path_here = os.path.dirname(os.path.dirname(__file__))
 
@@ -48,40 +47,6 @@ def import_muteins():
     dataTensor = np.reshape(dataMean["RFU"].values, (8, 4, 4, 12))
 
     return dataMean, dataTensor
-
-
-def import_samples_2_15(N=None):
-    """ This function imports the csv results of IL2-15 fitting into a numpy array called unkVec. """
-    n_params = nParams()
-
-    trace = pds.read_csv(join(path_here, "ckine/data/fits/IL2_model_results/chain-0.csv"))
-
-    scales = trace["scales__0"].values
-    num = scales.size
-
-    unkVec = np.zeros((n_params, num))
-    unkVec[6, :] = trace["kfwd__0"]
-    unkVec[7:13, :] = trace[["rxn__0", "rxn__1", "rxn__2", "rxn__3", "rxn__4", "rxn__5"]].values.T
-    unkVec[13:17, :] = 1.0
-
-    unkVec[22, :] = trace["Rexpr_2Ra__0"].values
-    unkVec[23, :] = trace["Rexpr_2Rb__0"].values
-    unkVec[24, :] = trace["Rexpr_gc__0"].values
-    unkVec[25, :] = trace["Rexpr_15Ra__0"].values
-
-    unkVec[17, :] = trace["endo__0"].values
-    unkVec[18, :] = trace["activeEndo__0"].values
-    unkVec[19, :] = trace["sortF__0"].values
-    unkVec[20, :] = trace["kRec__0"].values
-    unkVec[21, :] = trace["kDeg__0"].values
-
-    if N is not None:
-        assert 0 < N < num, "The N specified is out of bounds."
-
-        idx = np.random.randint(num, size=N)  # pick N numbers without replacement from 0 to num
-        unkVec, scales = unkVec[:, idx], scales[idx]
-
-    return unkVec, scales
 
 
 def import_pstat(combine_samples=True):
