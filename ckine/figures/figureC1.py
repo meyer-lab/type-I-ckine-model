@@ -6,7 +6,8 @@ import os
 import string
 import numpy as np
 from .figureCommon import subplotLabel, getSetup
-from ..flow import importF, pcaAll, pcaPlt, appPCA, fitPCA, sampleT, sampleNK, pcaPltColor, pcaAllCellType, loadingPlot
+from ..flow import importF
+from ..PCA import pcaAll, pcaPlt, appPCA, fitPCA, sampleT, sampleNK, pcaPltColor, pcaAllCellType, loadingPlot
 
 
 path_here = os.path.dirname(os.path.dirname(__file__))
