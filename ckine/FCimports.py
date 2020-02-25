@@ -8,11 +8,22 @@ from FlowCytometryTools import FCMeasurement
 from FlowCytometryTools import PolyGate
 
 
-def importF(pathname, WellRow):
+def combineWells(samples, channels_):
+    """Accepts sample array returned from importF, and array of channels, returns transformed combined well data"""
+    combinedSamples = samples[0]
+    for sample in samples[1:]:
+        combinedSamples.data = combinedSamples.data.append(sample.data)
+    t_combinedSamples = combinedSamples.transform('hlog', channels=channels_)
+    return t_combinedSamples
+
+
+def importF(date, plate, wellRow, panel, wellNum=None):
     """
-    Import FCS files. Variable input: name of path name to file. Output is a list of Data File Names in FCT Format
+    Import FCS files. Variable input: date in format mm-dd, plate #, panel #, and well letter. Output is a list of Data File Names in FCT Format
     Title/file names are returned in the array file --> later referenced in other functions as title/titles input argument
     """
+    pathname = "/PBMC receptor quant/" + date + "/Plate " + plate + "/Plate " + plate + " - Panel " + panel + " IL2R/"
+
     # Declare arrays and int
     file = []
     sample = []
@@ -21,7 +32,7 @@ def importF(pathname, WellRow):
     pathlist = Path(r"" + str(pathname)).glob("**/*.fcs")
     for path in pathlist:
         wellID = path.name.split("_")[1]
-        if wellID[0] == WellRow:
+        if wellID[0] == wellRow:
             file.append(str(path))
     file.sort()
     assert file != []
@@ -29,17 +40,23 @@ def importF(pathname, WellRow):
     for entry in file:
         sample.append(FCMeasurement(ID="Test Sample" + str(z), datafile=entry))
         z += 1
-    # Returns the array sample which contains data of each file in folder (one file per entry in array)
-    return sample, file
+    # The array sample contains data of each file in folder (one file per entry in array)
+    channels = []
+    if panel == 1:
+        channels = ['BL1-H', 'VL1-H', 'VL6-H', 'VL4-H', 'BL3-H']
+    elif panel == 2:
+        channels = ['BL4-H', 'BL3-H']
+    elif panel == 3:
+        channels = ['VL6-H', 'VL4-H', 'BL3-H']
 
+    if wellNum is None:
+        combinedSamples = combineWells(sample, channels)  # Combines all files from samples and transforms
+        return combinedSamples
 
-def combineWells(samples, channels_):
-    """Accepts sample array returned from importF, and array of channels, returns transformed combined well data"""
-    combinedSamples = samples[0]
-    for sample in samples[1:]:
-        combinedSamples.data = combinedSamples.data.append(sample.data)
-    t_combinedSamples = combinedSamples.transform('hlog', channels=channels_)
-    return t_combinedSamples
+    tsample = sample[wellNum - 1]
+    tsample = sample.transform('hlog', channels=channels)
+
+    return tsample
 
 
 # *********************************** Gating Fxns *******************************************
