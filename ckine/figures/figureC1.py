@@ -3,7 +3,6 @@ This creates Figure 1 for Single Cell FC data analysis. Examples of PCA loadings
 """
 
 import os
-import string
 import numpy as np
 from .figureCommon import subplotLabel, getSetup
 from ..flow import importF
@@ -21,9 +20,7 @@ def makeFigure():
     ax[10].axis('off')
     ax[11].axis('off')
 
-    for i, item in enumerate(ax):
-        if i < 10:
-            subplotLabel(item, string.ascii_uppercase[i])
+    subplotLabel(ax)
 
     dose_ind = np.array([0., 6., 11.])
     Tsample, _ = importF(path_here + "/data/flow/2019-04-18 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - Treg plate - NEW PBMC LOT/", "C")

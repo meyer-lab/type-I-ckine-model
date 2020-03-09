@@ -3,7 +3,6 @@ This creates Figure 1 for Single Cell FC data analysis. Examples of PCA loadings
 """
 
 import os
-import string
 from .figureCommon import subplotLabel, getSetup
 from ..flow import importF
 from ..PCA import EC50_PC_Scan, loadingPlot
@@ -20,9 +19,7 @@ def makeFigure():
     loadingT = []
     loadingNk = []
 
-    for i, item in enumerate(ax):
-        if i < 12:
-            subplotLabel(item, string.ascii_uppercase[i])
+    subplotLabel(ax)
 
     gates = [False, 'treg', 'nonTreg']
     Titles = ["Tcells", "T-regs", "T Helper"]

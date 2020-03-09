@@ -3,7 +3,6 @@ This creates Figure 1 for Single Cell FC data analysis. Examples of PCA loadings
 """
 
 import os
-import string
 import matplotlib.lines as mlines
 from .figureCommon import subplotLabel, getSetup
 from ..flow import importF
@@ -17,9 +16,7 @@ def makeFigure():
     # Get list of axis objects
     ax, f = getSetup((10, 5), (2, 4))
 
-    for i, item in enumerate(ax):
-        if i < 8:
-            subplotLabel(item, string.ascii_uppercase[i])
+    subplotLabel(ax)
 
     gates = [False, 'treg', 'tregMem', 'tregNaive', 'nonTreg', 'THelpMem', 'THelpN']
     Titles = ["Tcells", "T-regs", "Mem Treg", "Naive Treg", "T-helper", "Mem Th", "Naive Th"]
