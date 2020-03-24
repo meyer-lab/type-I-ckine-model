@@ -112,7 +112,7 @@ def pcaPlt(xf, pstat, ax, Tcells=True):
     ax.set_ylabel("PC2", fontsize=15)
     # add a color bar
     cbar = plt.colorbar(points, ax=ax)
-    cbar.set_label('pSTAT Level')
+    cbar.set_label("pSTAT Level")
 
 
 def loadingPlot(loading, ax, Tcells=True):
@@ -190,6 +190,7 @@ def pcaAll(sampleType, Tcells=True):
             xf_array.append(xf)
     return data_array, pstat_array, xf_array, loading
 
+
 # ************************PCA by color (gating+PCA)******************************
 
 
@@ -205,18 +206,30 @@ def sampleTcolor(smpl):
     pstat = tform.data[["RL1-H"]][0:]
     colmat = [] * (len(data) + 1)
     for i in range(len(data)):
-        if data.iat[i, 0] > 5.115e+03 and data.iat[i, 0] < 6.258e+03 and data.iat[i, 1] > 3.229e+03 and data.iat[i, 1] < 5.814e+03 and data.iat[i, 2] > 6.512e+03:
+        if (
+            data.iat[i, 0] > 5.115e03
+            and data.iat[i, 0] < 6.258e03
+            and data.iat[i, 1] > 3.229e03
+            and data.iat[i, 1] < 5.814e03
+            and data.iat[i, 2] > 6.512e03
+        ):
             if data.iat[i, 3] > 6300:
-                colmat.append('r')  # Treg naive
+                colmat.append("r")  # Treg naive
             else:
-                colmat.append('darkorange')  # Treg mem
-        elif data.iat[i, 0] > 2.586e+03 and data.iat[i, 0] < 5.115e+03 and data.iat[i, 1] > 3.470e+02 and data.iat[i, 1] < 5.245e+03 and data.iat[i, 2] > 6.512e+03:
+                colmat.append("darkorange")  # Treg mem
+        elif (
+            data.iat[i, 0] > 2.586e03
+            and data.iat[i, 0] < 5.115e03
+            and data.iat[i, 1] > 3.470e02
+            and data.iat[i, 1] < 5.245e03
+            and data.iat[i, 2] > 6.512e03
+        ):
             if data.iat[i, 3] > 6300:
-                colmat.append('g')  # Thelp naive
+                colmat.append("g")  # Thelp naive
             else:
-                colmat.append('darkorchid')  # Thelp mem
+                colmat.append("darkorchid")  # Thelp mem
         else:
-            colmat.append('c')
+            colmat.append("c")
     return data, pstat, features, colmat
 
 
@@ -236,15 +249,15 @@ def sampleNKcolor(smpl):
 
     for i in range(len(data)):
         if data.iat[i, 0] > 5.550e03 and data.iat[i, 0] < 6.468e03 and data.iat[i, 2] > 4.861e03 and data.iat[i, 2] < 5.813e03:
-            colmat.append('r')  # nk
+            colmat.append("r")  # nk
         elif data.iat[i, 0] > 6.533e03 and data.iat[i, 0] < 7.34e03 and data.iat[i, 2] > 4.899e03 and data.iat[i, 2] < 5.751e03:
-            colmat.append('darkgreen')  # bnk
+            colmat.append("darkgreen")  # bnk
         elif data.iat[i, 0] > 5.976e03 and data.iat[i, 0] < 7.541e03 and data.iat[i, 1] > 6.825e03 and data.iat[i, 1] < 9.016e03:
-            colmat.append('blueviolet')  # cd8+
+            colmat.append("blueviolet")  # cd8+
         elif data.iat[i, 0] > 5.50e03 and data.iat[i, 0] < 6.758e03 and data.iat[i, 2] > 6.021e03 and data.iat[i, 2] < 7.013e03:
-            colmat.append('midnightblue')  # nkt
+            colmat.append("midnightblue")  # nkt
         else:
-            colmat.append('c')
+            colmat.append("c")
     return data, pstat, features, colmat
 
 
@@ -266,19 +279,23 @@ def pcaPltColor(xf, colormat, ax, Tcells=True):
     # lighter --> darker = less --> more pSTAT5 present
     colormat = np.array(colormat)
     if Tcells:
-        ax.scatter(x[colormat == "c"], y[colormat == "c"], s=0.5, c="c", label="Other", alpha=0.3, edgecolors='none')
-        ax.scatter(x[colormat == "g"], y[colormat == "g"], s=0.5, c="g", label="T Helper Naive", alpha=0.3, edgecolors='none')
-        ax.scatter(x[colormat == "darkorchid"], y[colormat == "darkorchid"], s=0.5, c="darkorchid", label="T Helper Memory", alpha=0.3, edgecolors='none')
-        ax.scatter(x[colormat == "darkorange"], y[colormat == "darkorange"], s=0.5, c="darkorange", label="T Reg Memory", alpha=0.3, edgecolors='none')
-        ax.scatter(x[colormat == "r"], y[colormat == "r"], s=0.5, c="r", label="T Reg Naive", alpha=0.3, edgecolors='none')
-        ax.legend(markerscale=6.)
+        ax.scatter(x[colormat == "c"], y[colormat == "c"], s=0.5, c="c", label="Other", alpha=0.3, edgecolors="none")
+        ax.scatter(x[colormat == "g"], y[colormat == "g"], s=0.5, c="g", label="T Helper Naive", alpha=0.3, edgecolors="none")
+        ax.scatter(
+            x[colormat == "darkorchid"], y[colormat == "darkorchid"], s=0.5, c="darkorchid", label="T Helper Memory", alpha=0.3, edgecolors="none"
+        )
+        ax.scatter(
+            x[colormat == "darkorange"], y[colormat == "darkorange"], s=0.5, c="darkorange", label="T Reg Memory", alpha=0.3, edgecolors="none"
+        )
+        ax.scatter(x[colormat == "r"], y[colormat == "r"], s=0.5, c="r", label="T Reg Naive", alpha=0.3, edgecolors="none")
+        ax.legend(markerscale=6.0)
     else:
-        ax.scatter(x[colormat == "darkgreen"], y[colormat == "darkgreen"], s=0.5, c="g", label="BNK", alpha=0.3, edgecolors='none')
-        ax.scatter(x[colormat == "r"], y[colormat == "r"], s=0.5, c="r", label="NK", alpha=0.3, edgecolors='none')
-        ax.scatter(x[colormat == "blueviolet"], y[colormat == "blueviolet"], s=0.5, c="blueviolet", label="CD8+", alpha=0.3, edgecolors='none')
-        ax.scatter(x[colormat == "midnightblue"], y[colormat == "midnightblue"], s=0.5, c="midnightblue", label="NKT", alpha=0.3, edgecolors='none')
-        ax.scatter(x[colormat == "c"], y[colormat == "c"], s=0.5, c="c", label="Other", alpha=0.3, edgecolors='none')
-        ax.legend(markerscale=6.)
+        ax.scatter(x[colormat == "darkgreen"], y[colormat == "darkgreen"], s=0.5, c="g", label="BNK", alpha=0.3, edgecolors="none")
+        ax.scatter(x[colormat == "r"], y[colormat == "r"], s=0.5, c="r", label="NK", alpha=0.3, edgecolors="none")
+        ax.scatter(x[colormat == "blueviolet"], y[colormat == "blueviolet"], s=0.5, c="blueviolet", label="CD8+", alpha=0.3, edgecolors="none")
+        ax.scatter(x[colormat == "midnightblue"], y[colormat == "midnightblue"], s=0.5, c="midnightblue", label="NKT", alpha=0.3, edgecolors="none")
+        ax.scatter(x[colormat == "c"], y[colormat == "c"], s=0.5, c="c", label="Other", alpha=0.3, edgecolors="none")
+        ax.legend(markerscale=6.0)
 
 
 def pcaAllCellType(sampleType, Tcells=True):
@@ -319,6 +336,7 @@ def pcaAllCellType(sampleType, Tcells=True):
             colormat_array.append(colormat)
     return data_array, pstat_array, xf_array, loading, colormat_array
 
+
 # ************************Dose Response by PCA******************************
 
 
@@ -336,10 +354,10 @@ def PCADoseResponse(sampleType, PC1Bnds, PC2Bnds, cell_type, Tcells=True):
     for i, sample in enumerate(sampleType):
         if Tcells:
             data, pstat, _ = sampleT(sample)  # retrieve data
-            statcol = 'RL1-H'
+            statcol = "RL1-H"
         else:
             data, pstat, _ = sampleNK(sample)
-            statcol = 'BL2-H'
+            statcol = "BL2-H"
         if cell_type:
             data = alldata[i]
             pstat = data[[statcol]]
@@ -349,7 +367,9 @@ def PCADoseResponse(sampleType, PC1Bnds, PC2Bnds, cell_type, Tcells=True):
 
         xf = appPCA(data, PCAobj, Tcells)  # get PC1/2 vals
         PCApd = PCdatTransform(xf, pstat)
-        PCApd = PCApd[(PCApd['PC1'] >= PC1Bnds[0]) & (PCApd['PC1'] <= PC1Bnds[1]) & (PCApd['PC2'] >= PC2Bnds[0]) & (PCApd['PC2'] <= PC2Bnds[1])]  # remove data that that is not within given PC bounds
+        PCApd = PCApd[
+            (PCApd["PC1"] >= PC1Bnds[0]) & (PCApd["PC1"] <= PC1Bnds[1]) & (PCApd["PC2"] >= PC2Bnds[0]) & (PCApd["PC2"] <= PC2Bnds[1])
+        ]  # remove data that that is not within given PC bounds
         pSTATvals[0, i] = PCApd.loc[:, "pSTAT"].mean()  # take average Pstat activity of data fitting criteria
 
     pSTATvals = pSTATvals.flatten()
@@ -362,7 +382,7 @@ def PCdatTransform(xf, pstat):
     PC1, PC2, pstat = np.transpose(xf[:, 0]), np.transpose(xf[:, 1]), pstat.to_numpy()
     PC1, PC2 = np.reshape(PC1, (PC1.size, 1)), np.reshape(PC2, (PC2.size, 1))
     PCAstat = np.concatenate((PC1, PC2, pstat), axis=1)
-    PCApd = pd.DataFrame({'PC1': PCAstat[:, 0], 'PC2': PCAstat[:, 1], 'pSTAT': PCAstat[:, 2]})  # arrange into pandas datafrome
+    PCApd = pd.DataFrame({"PC1": PCAstat[:, 0], "PC2": PCAstat[:, 1], "pSTAT": PCAstat[:, 2]})  # arrange into pandas datafrome
     return PCApd
 
 
@@ -376,9 +396,9 @@ def StatGini(sampleType, ax, cell_type, Tcells=True):
     ginis = np.zeros([2, dosemat.size])
 
     if Tcells:
-        statcol = 'RL1-H'
+        statcol = "RL1-H"
     else:
-        statcol = 'BL2-H'
+        statcol = "BL2-H"
 
     if cell_type:
         gates = gating(cell_type)
@@ -404,8 +424,7 @@ def StatGini(sampleType, ax, cell_type, Tcells=True):
         subconst = (num + 1) / num
         coef = 2 / num
         summed = sum([(j + 1) * stat for j, stat in enumerate(stat_sort)])
-        ginis[0, i] = (coef * summed / (stat_sort.sum()) - subconst)\
-
+        ginis[0, i] = coef * summed / (stat_sort.sum()) - subconst
     for i, sample in enumerate(sampleType):  # Get inverse Ginis
         dat_array = alldata[i]
         stat_array = dat_array[[statcol]]
@@ -418,16 +437,16 @@ def StatGini(sampleType, ax, cell_type, Tcells=True):
         subconst = (num + 1) / num
         coef = 2 / num
         summed = sum([(j + 1) * stat for j, stat in enumerate(stat_sort)])
-        ginis[1, i] = (coef * summed / (stat_sort.sum()) - subconst)
+        ginis[1, i] = coef * summed / (stat_sort.sum()) - subconst
 
     ax.plot(dosemat, np.expand_dims(ginis[0, :], axis=0), ".--", color="navy", label="Gini Coefficients")
     ax.plot(dosemat, np.expand_dims(ginis[1, :], axis=0), ".--", color="darkorange", label="Inverse Gini Coefficients")
     ax.grid()
-    ax.set_xscale('log')
+    ax.set_xscale("log")
     ax.set_xlabel("Cytokine Dosage (log10[nM])")
     ax.set_ylabel("Gini Coefficient")
     ax.set(xlim=(0.0001, 100))
-    ax.set(ylim=(0., 1))
+    ax.set(ylim=(0.0, 1))
 
     return ginis, dosemat
 
@@ -436,7 +455,7 @@ def nllsq_EC50(x0, xdata, ydata):
     """
     Performs nonlinear least squares on activity measurements to determine parameters of Hill equation and outputs EC50.
     """
-    lsq_res = least_squares(residuals, x0, args=(xdata, ydata), bounds=([0., 0., 0., 0.], [10., 100., 10**5., 10**5]), jac='3-point')
+    lsq_res = least_squares(residuals, x0, args=(xdata, ydata), bounds=([0.0, 0.0, 0.0, 0.0], [10.0, 100.0, 10 ** 5.0, 10 ** 5]), jac="3-point")
     return lsq_res.x[0]
 
 
@@ -457,7 +476,7 @@ def hill_equation(x, x0, solution=0):
 
 def EC50_PC_Scan(sampleType, min_max_pts, ax, cell_type, Tcells=True, PC1=True):
     """Scans along one Principal component and returns EC50 for slices along that Axis"""
-    x0 = [1, 2., 5000., 3000.]  # would put gating here
+    x0 = [1, 2.0, 5000.0, 3000.0]  # would put gating here
     EC50s = np.zeros([1, min_max_pts[2]])
     scanspace = np.linspace(min_max_pts[0], min_max_pts[1], num=min_max_pts[2] + 1)
     axrange = np.array([-100, 100])
