@@ -1,6 +1,7 @@
 """
 This file includes various methods for flow cytometry analysis.
 """
+import os
 from pathlib import Path
 import matplotlib.cm as cm
 from matplotlib import pyplot as plt
@@ -22,7 +23,8 @@ def importF(date, plate, wellRow, panel, wellNum=None):
     Import FCS files. Variable input: date in format mm-dd, plate #, panel #, and well letter. Output is a list of Data File Names in FCT Format
     Title/file names are returned in the array file --> later referenced in other functions as title/titles input argument
     """
-    pathname = "/PBMC receptor quant/" + date + "/Plate " + plate + "/Plate " + plate + " - Panel " + panel + " IL2R/"
+    path_ = os.path.abspath('')
+    pathname = path_ + "/data/PBMC-rec-quant/" + date + "/Plate " + plate + "/Plate " + plate + " - Panel " + str(panel) + " IL2R/"
 
     # Declare arrays and int
     file = []
@@ -41,22 +43,34 @@ def importF(date, plate, wellRow, panel, wellNum=None):
         sample.append(FCMeasurement(ID="Test Sample" + str(z), datafile=entry))
         z += 1
     # The array sample contains data of each file in folder (one file per entry in array)
-    channels = []
+    channels_ = []
     if panel == 1:
-        channels = ['BL1-H', 'VL1-H', 'VL6-H', 'VL4-H', 'BL3-H']
+        channels_ = ['BL1-H', 'VL1-H', 'VL6-H', 'VL4-H', 'BL3-H']
     elif panel == 2:
-        channels = ['BL4-H', 'BL3-H']
+        channels_ = ['BL4-H', 'BL3-H']
     elif panel == 3:
-        channels = ['VL6-H', 'VL4-H', 'BL3-H']
+        channels_ = ['VL6-H', 'VL4-H', 'BL3-H']
 
     if wellNum is None:
-        combinedSamples = combineWells(sample, channels)  # Combines all files from samples and transforms
-        return combinedSamples
+        combinedSamples = combineWells(sample, channels_)  # Combines all files from samples and transforms
+        combinedSamples_ = subtract_unstained_signal(combinedSamples, channels_)
+        return combinedSamples_
 
     tsample = sample[wellNum - 1]
-    tsample = sample.transform('hlog', channels=channels)
+    tsample_ = subtract_unstained_signal(tsample, channels_)
 
-    return tsample
+    return tsample_.transform('tlog', channels=channels_)
+
+
+def subtract_unstained_signal(sample, channels):
+    """ Subtract mean unstained signal from all input channels for a given sample. """
+    for _, channel in enumerate(channels):
+        for i, _ in enumerate(sample[channel]):
+            if sample[channel][i] < 967.7513:
+                sample[channel][i] = 0
+            if sample[channel][i] >= 967.7513:
+                sample[channel][i] = sample[channel][i] - 967.7513
+    return sample
 
 
 # *********************************** Gating Fxns *******************************************
