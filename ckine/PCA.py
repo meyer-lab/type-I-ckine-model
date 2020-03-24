@@ -206,24 +206,12 @@ def sampleTcolor(smpl):
     pstat = tform.data[["RL1-H"]][0:]
     colmat = [] * (len(data) + 1)
     for i in range(len(data)):
-        if (
-            data.iat[i, 0] > 5.115e03
-            and data.iat[i, 0] < 6.258e03
-            and data.iat[i, 1] > 3.229e03
-            and data.iat[i, 1] < 5.814e03
-            and data.iat[i, 2] > 6.512e03
-        ):
+        if data.iat[i, 0] > 5.115e03 and data.iat[i, 0] < 6.258e03 and data.iat[i, 1] > 3.229e03 and data.iat[i, 1] < 5.814e03 and data.iat[i, 2] > 6.512e03:
             if data.iat[i, 3] > 6300:
                 colmat.append("r")  # Treg naive
             else:
                 colmat.append("darkorange")  # Treg mem
-        elif (
-            data.iat[i, 0] > 2.586e03
-            and data.iat[i, 0] < 5.115e03
-            and data.iat[i, 1] > 3.470e02
-            and data.iat[i, 1] < 5.245e03
-            and data.iat[i, 2] > 6.512e03
-        ):
+        elif data.iat[i, 0] > 2.586e03 and data.iat[i, 0] < 5.115e03 and data.iat[i, 1] > 3.470e02 and data.iat[i, 1] < 5.245e03 and data.iat[i, 2] > 6.512e03:
             if data.iat[i, 3] > 6300:
                 colmat.append("g")  # Thelp naive
             else:

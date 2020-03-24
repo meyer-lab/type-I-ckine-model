@@ -98,3 +98,23 @@ def import_pstat(combine_samples=True):
     )
 
     return ckineConc, cell_names, IL2_data, IL15_data, dataMean
+
+
+# Receptor Quant - Beads (4/23 & 4/26)
+
+
+channels = {}
+channels['A'] = ["VL1-H", "BL5-H", "RL1-H", "RL1-H", "RL1-H", "Width"]
+channels['C'] = ["VL4-H", "VL6-H", "BL1-H", "BL3-H"]
+channels['D'] = ['VL1-H', 'VL1-H', 'VL1-H', 'VL1-H', 'VL1-H']
+channels['E'] = ['VL6-H', 'BL3-H', 'BL5-H', 'BL5-H', 'BL5-H', 'BL5-H', 'BL5-H']
+channels['F'] = channels['G'] = channels['H'] = ['RL1-H', 'RL1-H', 'RL1-H', 'RL1-H', 'RL1-H']
+
+receptors = {}
+receptors['A'] = ["CD25", "CD122", "CD132", "IL15(1)", "IL15(2)", " "]
+receptors['C'] = ["CD3", "CD4", "CD127", "CD45RA"]
+receptors['D'] = ["CD25", "CD25", "CD25", "CD25", "CD25"]
+receptors['E'] = ["CD8", "CD56", "CD122", "CD122", "CD122", "CD122", "CD122"]
+receptors['F'] = ["CD132", "CD132", "CD132", "CD132", "CD132"]
+receptors['G'] = ["IL15(1)", "IL15(1)", "IL15(1)", "IL15(1)", "IL15(1)"]
+receptors['H'] = ["IL15(2)", "IL15(2)", "IL15(2)", "IL15(2)", "IL15(2)"]

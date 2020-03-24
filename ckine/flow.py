@@ -2,6 +2,7 @@
 This file includes various methods for flow cytometry analysis.
 """
 from pathlib import Path
+from scipy.optimize import least_squares
 import numpy as np
 from matplotlib import pyplot as plt
 from FlowCytometryTools import FCMeasurement
@@ -155,3 +156,20 @@ def count_data(sampleType, gate, Tcells=True):
         data_array.append(rawData)
     # returns the array for count of cells and the array where each entry is the data for the specific cell population in that .fcs file
     return count_array, data_array
+
+
+def exp_dec(x, pp):
+    """ Increasing exponential decay function general format. """
+    # https://www.myassays.com/four-parameter-logistic-regression.html
+    A, B, C, D = pp
+    return ((A - D) / (1.0 + ((x / C)**B))) + D
+
+
+def nllsq(x, y):
+    """ Runs nonlinear least squares for exponential decay function. """
+    lower = np.array([0.0, 0.1, 0.0, np.max(y)])
+    upper = np.array([np.min(y), 1.1, 1.0e6, 1.0e9])
+    x0 = (upper - lower) / 2.0 + lower
+
+    lsq = least_squares(lambda pp: exp_dec(x, pp) - y, x0, bounds=(lower, upper), jac='3-point')
+    return lsq.x

@@ -6,10 +6,12 @@ import seaborn as sns
 import numpy as np
 import matplotlib
 import matplotlib.cm as cm
+import svgutils.transform as st
 from matplotlib import gridspec, pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 from ..imports import import_pstat
+from ..flow import nllsq, exp_dec
 
 
 matplotlib.rcParams['legend.labelspacing'] = 0.2
@@ -91,8 +93,6 @@ def plot_cells(ax, factors, component_x, component_y, cell_names):
 
 def overlayCartoon(figFile, cartoonFile, x, y, scalee=1, scale_x=1, scale_y=1):
     """ Add cartoon to a figure file. """
-    import svgutils.transform as st
-
     # Overlay Figure cartoons
     template = st.fromfile(figFile)
     cartoon = st.fromfile(cartoonFile).getroot()
@@ -163,3 +163,40 @@ def legend_2_15(ax, location="center right"):
                               markerfacecolor='k', markersize=16)]
     ax.legend(handles=legend_elements, loc=location, prop={'size': 16})
     ax.axis('off')  # remove the grid
+
+
+def plot_hist(axes, sample, channels):
+    """ Plots histogram of signal for each well/channel in a sample. """
+    for i, s in enumerate(sample):
+        tform = s.transform('hlog', channels=channels[i])
+        data = tform.data[[channels[i]]][0:]
+        axes[i].hist(data[channels[i]], bins=100)
+
+
+def plot_fsc_ssc(axes, sample):
+    """ Plots forward and side scatter for a given sample (all wells). """
+    for i, s in enumerate(sample):
+        s.plot(['SSC-H', 'FSC-H'], ax=axes[i])
+        x0, x1 = axes[i].get_xlim()
+        y0, y1 = axes[i].get_ylim()
+        axes[i].set_aspect((x1 - x0) / (y1 - y0))
+
+
+def plot_regression(ax, sample, channels, receptors, recQuant, first=0, skip=False):
+    """ Plots regression of signal to bead capacity. """
+    means = np.zeros(len(recQuant))
+    for i, s in enumerate(sample):
+        if skip:
+            if i < first:
+                continue
+        tform = s.transform('hlog', channels=channels[i - first])
+        data = tform.data[[channels[i - first]]][0:]
+        avg_signal = np.mean(data[str(channels[i - first])])
+        means[i - first] = avg_signal
+    ax.scatter(recQuant, means)
+
+    lsq = nllsq(recQuant, means)
+    xs = np.linspace(np.amin(recQuant), np.amax(recQuant), num=1000)
+    ax.plot(xs, exp_dec(xs, lsq))
+    ax.set_xlabel('Bead Capacity')
+    ax.set_ylabel('Average Signal (' + str(receptors[4 + first]) + ')')
