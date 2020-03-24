@@ -43,23 +43,20 @@ def importF(date, plate, wellRow, panel, wellNum=None):
         sample.append(FCMeasurement(ID="Test Sample" + str(z), datafile=entry))
         z += 1
     # The array sample contains data of each file in folder (one file per entry in array)
-    channels_ = []
+    channels = []
     if panel == 1:
-        channels_ = ["BL1-H", "VL1-H", "VL6-H", "VL4-H", "BL3-H"]
+        channels = ["BL1-H", "VL1-H", "VL6-H", "VL4-H", "BL3-H"]
     elif panel == 2:
-        channels_ = ["BL4-H", "BL3-H"]
+        channels = ["BL4-H", "BL3-H"]
     elif panel == 3:
-        channels_ = ["VL6-H", "VL4-H", "BL3-H"]
+        channels = ["VL6-H", "VL4-H", "BL3-H"]
 
     if wellNum is None:
-        combinedSamples = combineWells(sample, channels_)  # Combines all files from samples and transforms
-        combinedSamples_ = subtract_unstained_signal(combinedSamples, channels_)
-        return combinedSamples_
+        combinedSamples = combineWells(sample, channels)  # Combines all files from samples and transforms
+        return subtract_unstained_signal(combinedSamples, channels)
 
-    tsample = sample[wellNum - 1]
-    tsample_ = subtract_unstained_signal(tsample, channels_)
-
-    return tsample_.transform("tlog", channels=channels_)
+    tsample = subtract_unstained_signal(sample[wellNum - 1], channels)
+    return sample.transform('hlog', channels=channels)
 
 
 def subtract_unstained_signal(sample, channels):
