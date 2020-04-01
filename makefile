@@ -67,11 +67,11 @@ clean:
 spell: manuscript/*.md
 	pandoc --lua-filter common/templates/spell.lua manuscript/*.md | sort | uniq -ic
 
-download: venv
+download:
 	mkdir -p ./ckine/data/flow
-	. venv/bin/activate && synapse -u aarmey -p $(SYNAPSE_APIKEY) get syn20506190 --downloadLocation ./ckine/data/flow/
-	. venv/bin/activate && synapse -u aarmey -p $(SYNAPSE_APIKEY) get syn20506252 --downloadLocation ./ckine/data/flow/
-	. venv/bin/activate && synapse -u aarmey -p $(SYNAPSE_APIKEY) get syn21677982 --downloadLocation ./ckine/data/flow/
+	wget -nv -P ./ckine/data/flow/ "https://syno.seas.ucla.edu:9001/gc-cytokines/2019-03-15 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - NK plate.zip"
+	wget -nv -P ./ckine/data/flow/ "https://syno.seas.ucla.edu:9001/gc-cytokines/2019-04-18 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - Treg plate - NEW PBMC LOT.zip"
+	wget -nv -P ./ckine/data/flow/ "https://syno.seas.ucla.edu:9001/gc-cytokines/2019-04-23 Receptor Quant - Beads.zip"
 	unzip -qd ./ckine/data/flow/ './ckine/data/flow/2019-03-15 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - NK plate.zip'
 	unzip -qd ./ckine/data/flow/ './ckine/data/flow/2019-04-18 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - Treg plate - NEW PBMC LOT.zip'
 	unzip -qd ./ckine/data/flow/ './ckine/data/flow/2019-04-23 Receptor Quant - Beads.zip'
