@@ -413,23 +413,7 @@ def StatGini(sampleType, ax, cell_type, Tcells=True):
         coef = 2 / num
         summed = sum([(j + 1) * stat for j, stat in enumerate(stat_sort)])
         ginis[0, i] = coef * summed / (stat_sort.sum()) - subconst
-    for i, sample in enumerate(sampleType):  # Get inverse Ginis
-        dat_array = alldata[i]
-        stat_array = dat_array[[statcol]]
-        stat_array = stat_array.to_numpy()
-        stat_array = stat_array.clip(min=1)
-        stat_array = np.reciprocal(stat_array)
-        stat_array.tolist()
-        stat_sort = np.sort(np.hstack(stat_array))
-        num = stat_array.size
-        subconst = (num + 1) / num
-        coef = 2 / num
-        summed = sum([(j + 1) * stat for j, stat in enumerate(stat_sort)])
-        ginis[1, i] = coef * summed / (stat_sort.sum()) - subconst
-
-    ax.plot(dosemat, np.expand_dims(ginis[0, :], axis=0), ".--", color="navy", label="Gini Coefficients")
-    ax.plot(dosemat, np.expand_dims(ginis[1, :], axis=0), ".--", color="darkorange", label="Inverse Gini Coefficients")
-    ax.grid()
+    ax.plot(dosemat, np.expand_dims(ginis[0, :], axis=0), ".--", color="navy")
     ax.set_xscale("log")
     ax.set_xlabel("Cytokine Dosage (log10[nM])")
     ax.set_ylabel("Gini Coefficient")
