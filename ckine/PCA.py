@@ -87,10 +87,10 @@ def pcaPlt(xf, pstat, ax, Tcells=True):
     """
     # PCA
     # Setting x and y values from xf
-    x = xf[:, 0]
-    y = xf[:, 1]
+    x = xf[0:1000, 0]
+    y = xf[0:1000, 1]
     # Saving numerical values for pSTAT5 data
-    pstat_data = pstat.values
+    pstat_data = pstat.values[0:1000]
     # Creating a figure for both scatter and mesh plots for PCA
     # This is the scatter plot of the cell clusters colored by pSTAT5 data
     # lighter --> darker = less --> more pSTAT5 present
@@ -256,8 +256,8 @@ def pcaPltColor(xf, colormat, ax, Tcells=True):
     """
     # PCA
     # Setting x and y values from xf
-    x = xf[:, 0]
-    y = xf[:, 1]
+    x = xf[0:1000, 0]
+    y = xf[0:1000, 1]
     # Working with pSTAT5 data --> setting min and max values
     # Creating a figure for both scatter and mesh plots for PCA
     ax.set_xlabel("PC 1", fontsize=15)
@@ -265,7 +265,7 @@ def pcaPltColor(xf, colormat, ax, Tcells=True):
     ax.set(xlim=(-5, 5), ylim=(-5, 5))
     # This is the scatter plot of the cell clusters colored by pSTAT5 data
     # lighter --> darker = less --> more pSTAT5 present
-    colormat = np.array(colormat)
+    colormat = np.array(colormat)[0:1000]
     if Tcells:
         ax.scatter(x[colormat == "c"], y[colormat == "c"], s=0.5, c="c", label="Other", alpha=0.3, edgecolors="none")
         ax.scatter(x[colormat == "g"], y[colormat == "g"], s=0.5, c="g", label="T Helper Naive", alpha=0.3, edgecolors="none")
