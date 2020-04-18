@@ -9,13 +9,12 @@ from FlowCytometryTools import FCMeasurement
 from FlowCytometryTools import PolyGate
 
 
-def combineWells(samples, channels_):
+def combineWells(samples):
     """Accepts sample array returned from importF, and array of channels, returns transformed combined well data"""
     combinedSamples = samples[0]
     for sample in samples[1:]:
         combinedSamples.data = combinedSamples.data.append(sample.data)
-    t_combinedSamples = combinedSamples.transform("hlog", channels=channels_)
-    return t_combinedSamples
+    return combinedSamples
 
 
 def importF(date, plate, wellRow, panel, wellNum=None):
@@ -36,6 +35,8 @@ def importF(date, plate, wellRow, panel, wellNum=None):
         wellID = path.name.split("_")[1]
         if wellID[0] == wellRow:
             file.append(str(path))
+        else:
+            unstainedWell = FCMeasurement(ID="Unstained Sample", datafile=str(path))  # Stores data from unstainedWell separately
     file.sort()
     assert file != []
     # Go through each file and assign the file contents to entry in the array sample
@@ -52,21 +53,23 @@ def importF(date, plate, wellRow, panel, wellNum=None):
         channels = ["VL6-H", "VL4-H", "BL3-H"]
 
     if wellNum is None:
-        combinedSamples = combineWells(sample, channels)  # Combines all files from samples and transforms
-        return subtract_unstained_signal(combinedSamples, channels)
+        combinedSamples = combineWells(sample)  # Combines all files from samples
+        combinedSamples = subtract_unstained_signal(combinedSamples, channels, unstainedWell)  # Subtracts background
+        return combinedSamples.transform("hlog", channels=channels)  # Transforms and returns
 
-    tsample = subtract_unstained_signal(sample[wellNum - 1], channels)
-    return sample.transform('hlog', channels=channels)
+    tsample = subtract_unstained_signal(sample[wellNum - 1], channels, unstainedWell)
+    return tsample.transform('hlog', channels=channels)
 
 
-def subtract_unstained_signal(sample, channels):
+def subtract_unstained_signal(sample, channels, unstainedWell):
     """ Subtract mean unstained signal from all input channels for a given sample. """
+    meanBackground = unstainedWell.data.mean(unstainedWell.data['RL1-H'])  # Calculates mean unstained signal
     for _, channel in enumerate(channels):
         for i, _ in enumerate(sample[channel]):
-            if sample[channel][i] < 967.7513:
+            if sample[channel][i] < meanBackground:
                 sample[channel][i] = 0
-            if sample[channel][i] >= 967.7513:
-                sample[channel][i] = sample[channel][i] - 967.7513
+            if sample[channel][i] >= meanBackground:
+                sample[channel][i] = sample[channel][i] - meanBackground
     return sample
 
 
