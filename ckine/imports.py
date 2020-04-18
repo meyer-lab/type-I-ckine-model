@@ -118,3 +118,9 @@ receptors['E'] = ["CD8", "CD56", "CD122", "CD122", "CD122", "CD122", "CD122"]
 receptors['F'] = ["CD132", "CD132", "CD132", "CD132", "CD132"]
 receptors['G'] = ["IL15(1)", "IL15(1)", "IL15(1)", "IL15(1)", "IL15(1)"]
 receptors['H'] = ["IL15(2)", "IL15(2)", "IL15(2)", "IL15(2)", "IL15(2)"]
+
+
+def importMoments():
+    path = os.path.dirname(os.path.dirname(__file__))
+    momentDF = pds.read_csv(join(path, "ckine/data/pSTATMomentData.csv"), encoding="latin1")
+    return momentDF
