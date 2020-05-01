@@ -13,4 +13,3 @@ manubot==0.3.1
 pandoc-fignos
 pandoc-eqnos
 pandoc-tablenos
-weasyprint==51

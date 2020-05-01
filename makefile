@@ -4,7 +4,7 @@ flist = C1 C2 C3 C4
 
 .PHONY: clean test all testprofile testcover spell
 
-all: output/manuscript.html output/manuscript.pdf pylint.log
+all: output/manuscript.html pylint.log
 
 venv: venv/bin/activate
 
@@ -43,23 +43,11 @@ output/manuscript.html: venv output/manuscript.md $(patsubst %, output/figure%.s
 		--include-after-body=common/templates/manubot/plugins/hypothesis.html \
 		--output=output/manuscript.html output/manuscript.md
 
-output/manuscript.pdf: venv output/manuscript.md $(patsubst %, output/figure%.svg, $(flist))
-	. venv/bin/activate && pandoc --from=markdown --to=html5 \
-    	--pdf-engine=weasyprint --pdf-engine-opt=--presentational-hints \
-    	--filter=pandoc-fignos --filter=pandoc-eqnos --filter=pandoc-tablenos \
-    	--bibliography=output/references.json \
-    	--csl=common/templates/manubot/style.csl \
-    	--metadata link-citations=true \
-    	--webtex=https://latex.codecogs.com/svg.latex? \
-    	--include-after-body=common/templates/manubot/default.html \
-    	--output=output/manuscript.pdf output/manuscript.md
-
 clean:
 	mv output/requests-cache.sqlite requests-cache.sqlite || true
 	rm -rf prof output coverage.xml .coverage .coverage* junit.xml coverage.xml profile profile.svg pylint.log
 	mkdir output
 	mv requests-cache.sqlite output/requests-cache.sqlite || true
-
 	rm -f profile.p* stats.dat .coverage nosetests.xml coverage.xml testResults.xml
 	rm -rf html doxy.log graph_all.svg venv ./ckine/data/flow
 	find -iname "*.pyc" -delete
@@ -72,9 +60,11 @@ download:
 	wget -nv -P ./ckine/data/flow/ "https://syno.seas.ucla.edu:9001/gc-cytokines/2019-03-15 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - NK plate.zip"
 	wget -nv -P ./ckine/data/flow/ "https://syno.seas.ucla.edu:9001/gc-cytokines/2019-04-18 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - Treg plate - NEW PBMC LOT.zip"
 	wget -nv -P ./ckine/data/flow/ "https://syno.seas.ucla.edu:9001/gc-cytokines/2019-04-23 Receptor Quant - Beads.zip"
+	wget -nv -P ./ckine/data/flow/ "https://syno.seas.ucla.edu:9001/gc-cytokines/4-23_4-26_Receptor quant.zip"
 	unzip -qd ./ckine/data/flow/ './ckine/data/flow/2019-03-15 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - NK plate.zip'
 	unzip -qd ./ckine/data/flow/ './ckine/data/flow/2019-04-18 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - Treg plate - NEW PBMC LOT.zip'
 	unzip -qd ./ckine/data/flow/ './ckine/data/flow/2019-04-23 Receptor Quant - Beads.zip'
+	unzip -qd ./ckine/data/flow/ './ckine/data/flow/4-23_4-26_Receptor quant.zip'
 
 test: venv
 	. venv/bin/activate && pytest
