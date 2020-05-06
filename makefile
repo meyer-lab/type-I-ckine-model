@@ -2,16 +2,21 @@ SHELL := /bin/bash
 
 flist = C1 C2 C3 C4
 
+notebooks := $(wildcard *.ipynb)
+
 .PHONY: clean test all testprofile testcover spell
 
-all: output/manuscript.html pylint.log
+all: output/manuscript.html pylint.log # $(patsubst %.ipynb, %.pdf, $(notebooks))
 
 venv: venv/bin/activate
 
 venv/bin/activate: requirements.txt
-	test -d venv || virtualenv --system-site-packages venv
+	test -d venv || virtualenv venv
 	. venv/bin/activate && pip install -Uqr requirements.txt
 	touch venv/bin/activate
+
+%.pdf: %.ipynb venv
+	. venv/bin/activate && jupyter nbconvert --execute --ExecutePreprocessor.timeout=6000 --to pdf $< --output $@
 
 output/figure%.svg: venv genFigures.py ckine/figures/figure%.py
 	mkdir -p ./output
@@ -56,11 +61,7 @@ spell: manuscript/*.md
 	pandoc --lua-filter common/templates/spell.lua manuscript/*.md | sort | uniq -ic
 
 download:
-	mkdir -p ./ckine/data/flow
-	wget -nv -P ./ckine/data/flow/ "https://syno.seas.ucla.edu:9001/gc-cytokines/2019-03-15 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - NK plate.zip"
-	wget -nv -P ./ckine/data/flow/ "https://syno.seas.ucla.edu:9001/gc-cytokines/2019-04-18 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - Treg plate - NEW PBMC LOT.zip"
-	wget -nv -P ./ckine/data/flow/ "https://syno.seas.ucla.edu:9001/gc-cytokines/2019-04-23 Receptor Quant - Beads.zip"
-	wget -nv -P ./ckine/data/flow/ "https://syno.seas.ucla.edu:9001/gc-cytokines/4-23_4-26_Receptor quant.zip"
+	wget -nv -P ./ckine/data/flow/ -i .dataURLs.txt
 	unzip -qd ./ckine/data/flow/ './ckine/data/flow/2019-03-15 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - NK plate.zip'
 	unzip -qd ./ckine/data/flow/ './ckine/data/flow/2019-04-18 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - Treg plate - NEW PBMC LOT.zip'
 	unzip -qd ./ckine/data/flow/ './ckine/data/flow/2019-04-23 Receptor Quant - Beads.zip'

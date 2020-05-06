@@ -1,0 +1,21 @@
+﻿ForeCyt Compensation Matrix, File Version 1.0, Export On 5/5/2020, ForeCyt Version 6.2.6752, Experiment: 2019-04-22 compensation and receptor quant standards to use for new lot experiments last week, Analysis: Analysis 1, Plate: Plate 0003
+VL4-H,VL1-H,1.5719
+BL1-H,VL1-H,0.0
+BL3-H,VL1-H,0.0
+RL1-H,VL1-H,0.0
+VL1-H,VL4-H,1.2734
+BL1-H,VL4-H,0.0
+BL3-H,VL4-H,5.8562
+RL1-H,VL4-H,0.0471
+VL1-H,BL1-H,0.0
+VL4-H,BL1-H,0.0424
+BL3-H,BL1-H,5.4037
+RL1-H,BL1-H,0.0
+VL1-H,BL3-H,0.0191
+VL4-H,BL3-H,16.3645
+BL1-H,BL3-H,0.2904
+RL1-H,BL3-H,0.0891
+VL1-H,RL1-H,0.0
+VL4-H,RL1-H,0.0
+BL1-H,RL1-H,0.0
+BL3-H,RL1-H,0.0

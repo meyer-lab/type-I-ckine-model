@@ -3,7 +3,6 @@ This creates Figure 1 for Single Cell FC data analysis. Examples of PCA loadings
 """
 
 import os
-import pandas as pds
 import numpy as np
 import seaborn as sns
 from matplotlib.lines import Line2D
@@ -41,7 +40,7 @@ def momentPlot(ax, df, moment, date, doseInd, legend=False):
         df1 = df.loc[(df["Date"] == date) & (df["Dose"] == doses[doseInd]) & (df["Time"] == time)]
         sns.stripplot(x="Cell", y=moment, hue="Ligand", data=df1, ax=ax, palette={"IL2": "darkorchid", "IL15": "goldenrod"}, marker=markers[i], dodge=True)
 
-    handles, labels = ax.get_legend_handles_labels()
+    handles, _ = ax.get_legend_handles_labels()
     handles = handles[0:2]
     for ii, name in enumerate(times):
         handles.append(Line2D([0], [0], color="k", marker=markers[ii], label="Time (hrs) " + str(name), linestyle="None"))
