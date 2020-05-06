@@ -14,3 +14,4 @@ pandoc-fignos
 pandoc-eqnos
 pandoc-tablenos
 jupyter==1.0.0
+julia==0.5.1

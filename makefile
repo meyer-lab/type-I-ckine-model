@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-flist = C1 C2 C3 C4
+flist = C1 C2 C3 C4 J1
 
 notebooks := $(wildcard *.ipynb)
 
@@ -11,8 +11,10 @@ all: output/manuscript.html pylint.log # $(patsubst %.ipynb, %.pdf, $(notebooks)
 venv: venv/bin/activate
 
 venv/bin/activate: requirements.txt
-	test -d venv || virtualenv venv
+	test -d venv || virtualenv --system-site-packages venv
 	. venv/bin/activate && pip install -Uqr requirements.txt
+	julia -e 'using Pkg; Pkg.add("PyCall"); Pkg.add(PackageSpec(url="https://borcuttjahns:987faeec2cac1aa066960e9cdc6345a58d3bacb1@github.com/meyer-lab/gcSolver.jl.git")); Pkg.build(); Pkg.precompile()'
+	. venv/bin/activate && python3 -c "import julia; julia.install()"
 	touch venv/bin/activate
 
 %.pdf: %.ipynb venv
