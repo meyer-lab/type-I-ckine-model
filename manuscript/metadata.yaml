@@ -1,5 +1,5 @@
 ---
-title: "Fitting a mechanistic model of IL-2/IL-15 response to single cell measurements using moment propagation"
+title: "Uncertainty propagation enables flexible modeling of single cell response"
 keywords:
   - cytokines
   - IL-2
@@ -13,6 +13,11 @@ authors:
   -
     name: Zoe S. Kim
     initials: ZSK
+    affiliations:
+      - Department of Bioengineering, University of California, Los Angeles
+  -
+    name: Peter C. Emmel
+    initials: PCE
     affiliations:
       - Department of Bioengineering, University of California, Los Angeles
   -
