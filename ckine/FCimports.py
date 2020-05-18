@@ -58,12 +58,12 @@ def importF(date, plate, wellRow, panel, wellNum=None):
         return combinedSamples.transform("hlog", channels=channels)  # Transforms and returns
 
     tsample = subtract_unstained_signal(sample[wellNum - 1], channels, unstainedWell)
-    return tsample.transform('hlog', channels=channels)
+    return tsample.transform("hlog", channels=channels)
 
 
 def subtract_unstained_signal(sample, channels, unstainedWell):
     """ Subtract mean unstained signal from all input channels for a given sample. """
-    meanBackground = unstainedWell.data.mean(unstainedWell.data['RL1-H'])  # Calculates mean unstained signal
+    meanBackground = unstainedWell.data.mean(unstainedWell.data["RL1-H"])  # Calculates mean unstained signal
     for _, channel in enumerate(channels):
         for i, _ in enumerate(sample[channel]):
             if sample[channel][i] < meanBackground:
@@ -84,17 +84,13 @@ def cd3cd4():
 
 def thelper():
     """Fucntion creating and returning T helper gate on CD3+CD4+ cells"""
-    thelp_gate = PolyGate(
-        [(3.2e03, 1e03), (3.2e03, 4.4e03), (5.2e03, 5.55e03), (6.4e03, 5.55e03), (6.4e03, 1e03)], ("BL1-H", "VL1-H"), region="in", name="thelp"
-    )
+    thelp_gate = PolyGate([(3.2e03, 1e03), (3.2e03, 4.4e03), (5.2e03, 5.55e03), (6.4e03, 5.55e03), (6.4e03, 1e03)], ("BL1-H", "VL1-H"), region="in", name="thelp")
     return thelp_gate
 
 
 def treg():
     """Function creating and returning the T reg gate on CD3+CD4+ cells"""
-    treg_gate = PolyGate(
-        [(2.9e03, 4.5e03), (4.8e03, 5.9e03), (3.5e03, 6.3e03), (9.0e02, 6.3e03), (9.0e02, 4.5e03)], ("BL1-H", "VL1-H"), region="in", name="treg"
-    )
+    treg_gate = PolyGate([(2.9e03, 4.5e03), (4.8e03, 5.9e03), (3.5e03, 6.3e03), (9.0e02, 6.3e03), (9.0e02, 4.5e03)], ("BL1-H", "VL1-H"), region="in", name="treg")
     return treg_gate
 
 

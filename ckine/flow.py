@@ -162,7 +162,7 @@ def exp_dec(x, pp):
     """ Increasing exponential decay function general format. """
     # https://www.myassays.com/four-parameter-logistic-regression.html
     A, B, C, D = pp
-    return ((A - D) / (1.0 + ((x / C)**B))) + D
+    return ((A - D) / (1.0 + ((x / C) ** B))) + D
 
 
 def nllsq(x, y):
@@ -171,5 +171,5 @@ def nllsq(x, y):
     upper = np.array([np.min(y), 1.1, 1.0e6, 1.0e9])
     x0 = (upper - lower) / 2.0 + lower
 
-    lsq = least_squares(lambda pp: exp_dec(x, pp) - y, x0, bounds=(lower, upper), jac='3-point')
+    lsq = least_squares(lambda pp: exp_dec(x, pp) - y, x0, bounds=(lower, upper), jac="3-point")
     return lsq.x

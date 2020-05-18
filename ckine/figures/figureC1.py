@@ -22,7 +22,7 @@ def makeFigure():
 
     subplotLabel(ax)
 
-    dose_ind = np.array([0., 6., 11.])
+    dose_ind = np.array([0.0, 6.0, 11.0])
     Tsample, _ = importF(path_here + "/data/flow/2019-04-18 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - Treg plate - NEW PBMC LOT/", "C")
     _, pstat_arrayT, _, loadingT = pcaAll(Tsample, Tcells=True)  # take out titles req
     dataT, _, _ = sampleT(Tsample[0])
@@ -50,8 +50,8 @@ def makeFigure():
     loadingPlot(loadingNk, ax=ax[7], Tcells=False)
     ax[7].set_title("T-reg Loadings", fontsize=15)
 
-    #ColPlot(Tsample, ax[8], 4, True)
-    #ColPlot(Nksample, ax[9], 4, False)
+    # ColPlot(Tsample, ax[8], 4, True)
+    # ColPlot(Nksample, ax[9], 4, False)
     RecQuantResp(ax[8], Tsample)
     RecQuantResp(ax[9], Tsample, "treg")
     RecQuantResp(ax[10], Tsample, "nonTreg")

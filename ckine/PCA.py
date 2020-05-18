@@ -269,12 +269,8 @@ def pcaPltColor(xf, colormat, ax, Tcells=True):
     if Tcells:
         ax.scatter(x[colormat == "c"], y[colormat == "c"], s=0.5, c="c", label="Other", alpha=0.3, edgecolors="none")
         ax.scatter(x[colormat == "g"], y[colormat == "g"], s=0.5, c="g", label="T Helper Naive", alpha=0.3, edgecolors="none")
-        ax.scatter(
-            x[colormat == "darkorchid"], y[colormat == "darkorchid"], s=0.5, c="darkorchid", label="T Helper Memory", alpha=0.3, edgecolors="none"
-        )
-        ax.scatter(
-            x[colormat == "darkorange"], y[colormat == "darkorange"], s=0.5, c="darkorange", label="T Reg Memory", alpha=0.3, edgecolors="none"
-        )
+        ax.scatter(x[colormat == "darkorchid"], y[colormat == "darkorchid"], s=0.5, c="darkorchid", label="T Helper Memory", alpha=0.3, edgecolors="none")
+        ax.scatter(x[colormat == "darkorange"], y[colormat == "darkorange"], s=0.5, c="darkorange", label="T Reg Memory", alpha=0.3, edgecolors="none")
         ax.scatter(x[colormat == "r"], y[colormat == "r"], s=0.5, c="r", label="T Reg Naive", alpha=0.3, edgecolors="none")
         ax.legend(markerscale=6.0)
     else:
@@ -355,9 +351,7 @@ def PCADoseResponse(sampleType, PC1Bnds, PC2Bnds, cell_type, Tcells=True):
 
         xf = appPCA(data, PCAobj, Tcells)  # get PC1/2 vals
         PCApd = PCdatTransform(xf, pstat)
-        PCApd = PCApd[
-            (PCApd["PC1"] >= PC1Bnds[0]) & (PCApd["PC1"] <= PC1Bnds[1]) & (PCApd["PC2"] >= PC2Bnds[0]) & (PCApd["PC2"] <= PC2Bnds[1])
-        ]  # remove data that that is not within given PC bounds
+        PCApd = PCApd[(PCApd["PC1"] >= PC1Bnds[0]) & (PCApd["PC1"] <= PC1Bnds[1]) & (PCApd["PC2"] >= PC2Bnds[0]) & (PCApd["PC2"] <= PC2Bnds[1])]  # remove data that that is not within given PC bounds
         pSTATvals[0, i] = PCApd.loc[:, "pSTAT"].mean()  # take average Pstat activity of data fitting criteria
 
     pSTATvals = pSTATvals.flatten()

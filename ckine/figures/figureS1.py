@@ -35,7 +35,7 @@ def momentPlot(ax, df, moment, date, doseInd, legend=False):
     """Plots moments of pSTAT for a given dose for both IL2 and IL15"""
     doses = df.Dose.unique()
     times = df.Time.unique()
-    markers = ['.', '^', 'P', 'D']
+    markers = [".", "^", "P", "D"]
     for i, time in enumerate(times):
         df1 = df.loc[(df["Date"] == date) & (df["Dose"] == doses[doseInd]) & (df["Time"] == time)]
         sns.stripplot(x="Cell", y=moment, hue="Ligand", data=df1, ax=ax, palette={"IL2": "darkorchid", "IL15": "goldenrod"}, marker=markers[i], dodge=True)

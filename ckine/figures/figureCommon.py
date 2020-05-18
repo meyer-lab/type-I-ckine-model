@@ -14,17 +14,20 @@ from ..imports import import_pstat
 from ..flow import nllsq, exp_dec
 
 
-matplotlib.rcParams['legend.labelspacing'] = 0.2
-matplotlib.rcParams['legend.fontsize'] = 8
-matplotlib.rcParams['xtick.major.pad'] = 2
-matplotlib.rcParams['ytick.major.pad'] = 2
-matplotlib.rcParams['xtick.minor.pad'] = 1.9
-matplotlib.rcParams['ytick.minor.pad'] = 1.9
-matplotlib.rcParams['legend.handletextpad'] = 0.5
-matplotlib.rcParams['legend.handlelength'] = 0.5
-matplotlib.rcParams['legend.framealpha'] = 0.5
-matplotlib.rcParams['legend.markerscale'] = 0.7
-matplotlib.rcParams['legend.borderpad'] = 0.35
+matplotlib.rcParams["legend.labelspacing"] = 0.2
+matplotlib.rcParams["legend.fontsize"] = 8
+matplotlib.rcParams["xtick.major.pad"] = 2
+matplotlib.rcParams["ytick.major.pad"] = 2
+matplotlib.rcParams["xtick.minor.pad"] = 1.9
+matplotlib.rcParams["ytick.minor.pad"] = 1.9
+matplotlib.rcParams["legend.handletextpad"] = 0.5
+matplotlib.rcParams["legend.handlelength"] = 0.5
+matplotlib.rcParams["legend.framealpha"] = 0.5
+matplotlib.rcParams["legend.markerscale"] = 0.7
+matplotlib.rcParams["legend.borderpad"] = 0.35
+
+
+dosemat = np.array([84, 28, 9.333333, 3.111, 1.037037, 0.345679, 0.115226, 0.038409, 0.012803, 0.004268, 0.001423, 0.000474])
 
 
 def getSetup(figsize, gridd, multz=None, empts=None):
@@ -73,17 +76,17 @@ def subplotLabel(axs):
 
 def traf_names():
     """ Returns a list of the trafficking parameters in order they appear within unkVec. """
-    return [r'$\mathrm{k_{endo}}$', r'$\mathrm{k_{endo,a}}$', r'$\mathrm{k_{rec}}$', r'$\mathrm{k_{deg}}$']
+    return [r"$\mathrm{k_{endo}}$", r"$\mathrm{k_{endo,a}}$", r"$\mathrm{k_{rec}}$", r"$\mathrm{k_{deg}}$"]
 
 
 def plot_conf_int(ax, x_axis, y_axis, color, label=None):
     """ Shades the 25-75 percentiles dark and the 10-90 percentiles light. The percentiles are found along axis=1. """
-    y_axis_top = np.percentile(y_axis, 90., axis=1)
-    y_axis_bot = np.percentile(y_axis, 10., axis=1)
+    y_axis_top = np.percentile(y_axis, 90.0, axis=1)
+    y_axis_bot = np.percentile(y_axis, 10.0, axis=1)
     ax.fill_between(x_axis, y_axis_top, y_axis_bot, color=color, alpha=0.4)
 
-    y_axis_top = np.percentile(y_axis, 75., axis=1)
-    y_axis_bot = np.percentile(y_axis, 25., axis=1)
+    y_axis_top = np.percentile(y_axis, 75.0, axis=1)
+    y_axis_bot = np.percentile(y_axis, 25.0, axis=1)
     ax.fill_between(x_axis, y_axis_top, y_axis_bot, color=color, alpha=0.7, label=label)
     if label is not None:
         ax.legend()
@@ -92,14 +95,14 @@ def plot_conf_int(ax, x_axis, y_axis, color, label=None):
 def plot_cells(ax, factors, component_x, component_y, cell_names):
     """This function plots the combination decomposition based on cell type."""
     colors = cm.rainbow(np.linspace(0, 1, len(cell_names)))
-    markersCells = ['^', '*', 'D', 's', 'X', 'o', '4', 'H', 'P', '*', 'D', 's', 'X']
+    markersCells = ["^", "*", "D", "s", "X", "o", "4", "H", "P", "*", "D", "s", "X"]
 
     for ii, _ in enumerate(factors[:, component_x - 1]):
         ax.scatter(factors[ii, component_x - 1], factors[ii, component_y - 1], c=[colors[ii]], marker=markersCells[ii], label=cell_names[ii])
 
-    ax.set_title('Cells')
-    ax.set_xlabel('Component ' + str(component_x))
-    ax.set_ylabel('Component ' + str(component_y))
+    ax.set_title("Cells")
+    ax.set_xlabel("Component " + str(component_x))
+    ax.set_ylabel("Component " + str(component_y))
     ax.set_xlim(left=-0.03)
     ax.legend()
 
@@ -124,10 +127,10 @@ def plot_ligands(ax, factors, ligand_names, cutoff=0.0):
     ILs = np.flip(ILs)
     colors = sns.color_palette()
     legend_shape = []
-    markers = ['.', '^', 'd', '*']
+    markers = [".", "^", "d", "*"]
 
     for ii, name in enumerate(ligand_names):
-        legend_shape.append(Line2D([0], [0], color='k', marker=markers[ii], label=name, linestyle=''))  # Make ligand legend elements
+        legend_shape.append(Line2D([0], [0], color="k", marker=markers[ii], label=name, linestyle=""))  # Make ligand legend elements
 
     for ii in range(factors.shape[1]):
         componentLabel = True
@@ -137,7 +140,7 @@ def plot_ligands(ax, factors, ligand_names, cutoff=0.0):
             # If the component value never gets over cutoff, then don't plot the line
             if np.max(factors[idx, ii]) > cutoff:
                 if componentLabel:
-                    ax.plot(ILs, factors[idx, ii], color=colors[ii], label='Cmp. ' + str(ii + 1))
+                    ax.plot(ILs, factors[idx, ii], color=colors[ii], label="Cmp. " + str(ii + 1))
                     componentLabel = False
                 else:
                     ax.plot(ILs, factors[idx, ii], color=colors[ii])
@@ -145,10 +148,10 @@ def plot_ligands(ax, factors, ligand_names, cutoff=0.0):
 
     ax.add_artist(ax.legend(handles=legend_shape, loc=2))
 
-    ax.set_xlabel('Ligand Concentration (nM)')
-    ax.set_ylabel('Component')
-    ax.set_xscale('log')
-    ax.set_title('Ligands')
+    ax.set_xlabel("Ligand Concentration (nM)")
+    ax.set_ylabel("Component")
+    ax.set_xscale("log")
+    ax.set_title("Ligands")
 
     # Place legend
     ax.legend(loc=6)
@@ -158,30 +161,30 @@ def plot_timepoints(ax, ts, factors):
     """Function to put all timepoint plots in one figure."""
     colors = sns.color_palette()
     for ii in range(factors.shape[1]):
-        ax.plot(ts, factors[:, ii], c=colors[ii], label='Component ' + str(ii + 1))
+        ax.plot(ts, factors[:, ii], c=colors[ii], label="Component " + str(ii + 1))
 
-    ax.set_xlabel('Time (min)')
-    ax.set_ylabel('Component')
-    ax.set_title('Time')
+    ax.set_xlabel("Time (min)")
+    ax.set_ylabel("Component")
+    ax.set_title("Time")
     ax.legend()
 
 
 def legend_2_15(ax, location="center right"):
     """ Plots a legend for all the IL-2 and IL-15 related plots in its own subpanel. """
-    legend_elements = [Patch(facecolor='darkorchid', label='IL-2'),
-                       Patch(facecolor='goldenrod', label='IL-15'),
-                       Line2D([0], [0], marker='o', color='w', label='IL-2Rα+',
-                              markerfacecolor='k', markersize=16),
-                       Line2D([0], [0], marker='^', color='w', label='IL-2Rα-',
-                              markerfacecolor='k', markersize=16)]
-    ax.legend(handles=legend_elements, loc=location, prop={'size': 16})
-    ax.axis('off')  # remove the grid
+    legend_elements = [
+        Patch(facecolor="darkorchid", label="IL-2"),
+        Patch(facecolor="goldenrod", label="IL-15"),
+        Line2D([0], [0], marker="o", color="w", label="IL-2Rα+", markerfacecolor="k", markersize=16),
+        Line2D([0], [0], marker="^", color="w", label="IL-2Rα-", markerfacecolor="k", markersize=16),
+    ]
+    ax.legend(handles=legend_elements, loc=location, prop={"size": 16})
+    ax.axis("off")  # remove the grid
 
 
 def plot_hist(axes, sample, channels):
     """ Plots histogram of signal for each well/channel in a sample. """
     for i, s in enumerate(sample):
-        tform = s.transform('hlog', channels=channels[i])
+        tform = s.transform("hlog", channels=channels[i])
         data = tform.data[[channels[i]]][0:]
         axes[i].hist(data[channels[i]], bins=100)
 
@@ -189,7 +192,7 @@ def plot_hist(axes, sample, channels):
 def plot_fsc_ssc(axes, sample):
     """ Plots forward and side scatter for a given sample (all wells). """
     for i, s in enumerate(sample):
-        s.plot(['SSC-H', 'FSC-H'], ax=axes[i])
+        s.plot(["SSC-H", "FSC-H"], ax=axes[i])
         x0, x1 = axes[i].get_xlim()
         y0, y1 = axes[i].get_ylim()
         axes[i].set_aspect((x1 - x0) / (y1 - y0))
@@ -202,7 +205,7 @@ def plot_regression(ax, sample, channels, receptors, recQuant, first=0, skip=Fal
         if skip:
             if i < first:
                 continue
-        tform = s.transform('hlog', channels=channels[i - first])
+        tform = s.transform("hlog", channels=channels[i - first])
         data = tform.data[[channels[i - first]]][0:]
         avg_signal = np.mean(data[str(channels[i - first])])
         means[i - first] = avg_signal
@@ -211,5 +214,5 @@ def plot_regression(ax, sample, channels, receptors, recQuant, first=0, skip=Fal
     lsq = nllsq(recQuant, means)
     xs = np.linspace(np.amin(recQuant), np.amax(recQuant), num=1000)
     ax.plot(xs, exp_dec(xs, lsq))
-    ax.set_xlabel('Bead Capacity')
-    ax.set_ylabel('Average Signal (' + str(receptors[4 + first]) + ')')
+    ax.set_xlabel("Bead Capacity")
+    ax.set_ylabel("Average Signal (" + str(receptors[4 + first]) + ")")
