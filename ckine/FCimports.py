@@ -1,20 +1,19 @@
 """
-This file includes various methods for flow cytometry analysis of fixed cells.
+This file includes various methods for flow cytometry analysis.
 """
 import os
-from os.path import dirname, join
 from pathlib import Path
-import pandas as pd
-import numpy as np
-from FlowCytometryTools import FCMeasurement, PolyGate, ThresholdGate
-path_here = dirname(dirname(__file__))
+import matplotlib.cm as cm
+from matplotlib import pyplot as plt
+from FlowCytometryTools import FCMeasurement
+from FlowCytometryTools import PolyGate
 
 
 def combineWells(samples):
-    """Accepts sample array returned from importF, and array of channels, returns combined well data"""
+    """Accepts sample array returned from importF, and array of channels, returns transformed combined well data"""
     combinedSamples = samples[0]
     for sample in samples[1:]:
-        combinedSamples.data = combinedSamples.data.append(sample.data, ignore_index=True)
+        combinedSamples.data = combinedSamples.data.append(sample.data)
     return combinedSamples
 
 
@@ -24,8 +23,7 @@ def importF(date, plate, wellRow, panel, wellNum=None):
     Title/file names are returned in the array file --> later referenced in other functions as title/titles input argument
     """
     path_ = os.path.abspath("")
-
-    pathname = path_ + "/ckine/data/flow/" + date + " Live PBMC Receptor Data/Plate " + plate + "/Plate " + plate + " - Panel " + str(panel) + " IL2R/"
+    pathname = path_ + "/data/PBMC-rec-quant/" + date + "/Plate " + plate + "/Plate " + plate + " - Panel " + str(panel) + " IL2R/"
 
     # Declare arrays and int
     file = []
@@ -33,7 +31,6 @@ def importF(date, plate, wellRow, panel, wellNum=None):
     z = 0
     # Read in user input for file path and assign to array file
     pathlist = Path(r"" + str(pathname)).glob("**/*.fcs")
-
     for path in pathlist:
         wellID = path.name.split("_")[1]
         if wellID[0] == wellRow:
@@ -47,131 +44,82 @@ def importF(date, plate, wellRow, panel, wellNum=None):
         sample.append(FCMeasurement(ID="Test Sample" + str(z), datafile=entry))
         z += 1
     # The array sample contains data of each file in folder (one file per entry in array)
+    channels = []
+    if panel == 1:
+        channels = ["BL1-H", "VL1-H", "VL6-H", "VL4-H", "BL3-H"]
+    elif panel == 2:
+        channels = ["BL4-H", "BL3-H"]
+    elif panel == 3:
+        channels = ["VL6-H", "VL4-H", "BL3-H"]
 
     if wellNum is None:
         combinedSamples = combineWells(sample)  # Combines all files from samples
-        compSample = applyMatrix(combinedSamples, compMatrix(date, plate, wellRow))  # Applies compensation matrix
-        return compSample, unstainedWell
+        combinedSamples = subtract_unstained_signal(combinedSamples, channels, unstainedWell)  # Subtracts background
+        return combinedSamples.transform("hlog", channels=channels)  # Transforms and returns
 
-    compSample = applyMatrix(sample, compMatrix(date, plate, wellRow))
-    return compSample, unstainedWell
-
-
-def compMatrix(date, plate, panel, invert=True):
-    """Applies compensation matrix given parameters date in mm-dd, plate number and panel A, B, or C."""
-    path = path_here + "/ckine/data/compensation/0" + date + "/Plate " + plate + "/Plate " + plate + " - " + panel + ".csv"
-
-    header_names = ['Channel1', 'Channel2', 'Comp']
-    df_comp = pd.read_csv(path, header=None, skiprows=1, names=header_names)
-    # Add diangonal values of 100 to compensation values
-    addedChannels = []
-    for i in df_comp.index:
-        channelName = df_comp.iloc[i]['Channel1']
-        if channelName not in addedChannels:
-            addedChannels.append(channelName)
-            df2 = pd.DataFrame([[channelName, channelName, 100]], columns=['Channel1', 'Channel2', 'Comp'])
-            df_comp = df_comp.append(df2, ignore_index=True)
-    # create square matrix from compensation values
-    df_matrix = pd.DataFrame(index=addedChannels, columns=addedChannels)
-    for i in df_matrix.index:
-        for c in df_matrix.columns:
-            df_matrix.at[i, c] = df_comp.loc[(df_comp['Channel1'] == c) & (df_comp['Channel2'] == i), 'Comp'].iloc[0]
-            # switch i and c to transpose
-    # df_matrix now has all values in square matrix form
-    if invert:
-        a = np.matrix(df_matrix.values, dtype=float)
-        df_matrix = pd.DataFrame(np.linalg.inv(a), df_matrix.columns, df_matrix.index)
-    return df_matrix
-
-
-def applyMatrix(sample, matrix):
-    """Multiples two matrices together in the order sample dot matrix"""
-    holder = pd.DataFrame()
-    for c in sample.data.columns:
-        if c not in matrix:
-            holder = holder.join(sample.data[[c]], how='right')
-            sample.data = sample.data.drop([c], axis=1)
-    sample.data = sample.data.dot(matrix)
-    sample.data = sample.data.join(holder)
-    return sample
+    tsample = subtract_unstained_signal(sample[wellNum - 1], channels, unstainedWell)
+    return tsample.transform("hlog", channels=channels)
 
 
 def subtract_unstained_signal(sample, channels, unstainedWell):
     """ Subtract mean unstained signal from all input channels for a given sample. """
-    meanBackground = np.mean(unstainedWell.data['RL1-H'])  # Calculates mean unstained signal
-
-    def compare_background(signal, background):
-        """ Compares signal to background: subtracts background from signal if greater or sets to zero if not. """
-        if signal <= background:
-            return 0
-        return signal - background
-
-    vfunc = np.vectorize(compare_background)
-
+    meanBackground = unstainedWell.data.mean(unstainedWell.data["RL1-H"])  # Calculates mean unstained signal
     for _, channel in enumerate(channels):
-        sample[channel] = vfunc(sample[channel], meanBackground)
-
+        for i, _ in enumerate(sample[channel]):
+            if sample[channel][i] < meanBackground:
+                sample[channel][i] = 0
+            if sample[channel][i] >= meanBackground:
+                sample[channel][i] = sample[channel][i] - meanBackground
     return sample
 
 
-def import_gates():
-    """ Imports dataframe with gates for all cell types and replicates. """
-    data = pd.read_csv(join(path_here, "ckine/data/fc_gates.csv"))
-    data.dropna(axis=0, how='any', thresh=None, subset=None, inplace=True)
-    return data
+# *********************************** Gating Fxns *******************************************
+
+# Panel 1 gates:naive and memory T-regulatory and T-helper cells
+def cd3cd4():
+    """Function for gating CD3+CD4+ cells (generates T cells)"""
+    cd3cd4_gate = PolyGate([(5.2e03, 5.4e03), (5.8e03, 7.9e03), (7.2e03, 7.9e03), (7.2e03, 5.7e03)], ("VL6-H", "VL4-H"), region="in", name="cd3cd4")
+    return cd3cd4_gate
 
 
-def apply_gates(date, plate, gates_df, subpopulations=False):
-    """ Constructs dataframe with channels relevant to receptor quantification. """
-    df, unstainedWell = thelp_sample(date, plate, gates_df, mem_naive=subpopulations)
-    df = df.append(treg_sample(date, plate, gates_df, mem_naive=subpopulations))
-    df = df.append(nk_nkt_sample(date, plate, gates_df, nkt=subpopulations))
-    df = df.append(cd8_sample(date, plate, gates_df, mem_naive=subpopulations))
-    df = subtract_unstained_signal(df, ["VL1-H", "BL5-H", "RL1-H"], unstainedWell)
-    #print(df)
-    return df
+def thelper():
+    """Fucntion creating and returning T helper gate on CD3+CD4+ cells"""
+    thelp_gate = PolyGate([(3.2e03, 1e03), (3.2e03, 4.4e03), (5.2e03, 5.55e03), (6.4e03, 5.55e03), (6.4e03, 1e03)], ("BL1-H", "VL1-H"), region="in", name="thelp")
+    return thelp_gate
 
 
-def thelp_sample(date, plate, gates_df, mem_naive=False):
-    """ Returns gated T-helper sample for a given date and plate. """
-    # import data and create transformed df for gating
-    panel1, unstainedWell = importF(date, plate, "A", 1)
-    panel1_t = panel1.transform("tlog", channels=['VL6-H', 'VL4-H', 'BL1-H', 'VL1-H', 'BL3-H'])
+def treg():
+    """Function creating and returning the T reg gate on CD3+CD4+ cells"""
+    treg_gate = PolyGate([(2.9e03, 4.5e03), (4.8e03, 5.9e03), (3.5e03, 6.3e03), (9.0e02, 6.3e03), (9.0e02, 4.5e03)], ("BL1-H", "VL1-H"), region="in", name="treg")
+    return treg_gate
 
-    df = pd.DataFrame(columns=["Cell Type", "Date", "Plate", "VL1-H", "BL5-H", "RL1-H"])  # initialize dataframe for receptor quant channels
 
-    # implement gating, revert tlog, and add to dataframe
-    samplecd3cd4 = panel1_t.gate(eval(gates_df.loc[(gates_df["Name"] == 'CD3CD4') &
-                                                   (gates_df["Date"] == date) & (gates_df["Plate"] == float(plate))]["Gate"].values[0]))
-    samplethelp = samplecd3cd4.gate(eval(gates_df.loc[(gates_df["Name"] == 'T-helper') &
-                                                      (gates_df["Date"] == date) & (gates_df["Plate"] == float(plate))]["Gate"].values[0]))
-    gated_idx = np.array(samplethelp.data.index)
-    panel1.set_data(panel1.data.loc[gated_idx])
+# Panel 2 gates: NK and CD56bright NK cells
 
-    df_add = pd.DataFrame({"Cell Type": np.tile("T-helper", panel1.counts), "Date": np.tile(date, panel1.counts), "Plate": np.tile(plate, panel1.counts),
-                           "VL1-H": panel1.data[['VL1-H']].values.reshape((panel1.counts,)), "BL5-H": panel1.data[['BL5-H']].values.reshape((panel1.counts,)),
-                           "RL1-H": panel1.data[['RL1-H']].values.reshape((panel1.counts,))})
-    df = df.append(df_add)
+# Panel 3 gates: naive and memory cytotoxic T cells
 
-    # separates memory and naive populations and adds to dataframe
-    if mem_naive:
-        panel1_n = panel1.copy()
-        samplenaive = samplethelp.gate(eval(gates_df.loc[(gates_df["Name"] == 'Naive Th') &
-                                                         (gates_df["Date"] == date) & (gates_df["Plate"] == float(plate))]["Gate"].values[0]))
-        gated_idx = np.array(samplenaive.data.index)
-        panel1_n.set_data(panel1.data.loc[gated_idx])
-        df_add = pd.DataFrame({"Cell Type": np.tile("Naive Th", samplenaive.counts), "Date": np.tile(date, samplenaive.counts), "Plate": np.tile(plate, samplenaive.counts),
-                               "VL1-H": panel1_n.data[['VL1-H']].values.reshape((samplenaive.counts,)), "BL5-H": panel1_n.data[['BL5-H']].values.reshape((samplenaive.counts,)),
-                               "RL1-H": panel1_n.data[['RL1-H']].values.reshape((samplenaive.counts,))})
-        df = df.append(df_add)
-        panel1_m = panel1.copy()
-        samplemem = samplethelp.gate(eval(gates_df.loc[(gates_df["Name"] == 'Mem Th') &
-                                                       (gates_df["Date"] == date) & (gates_df["Plate"] == float(plate))]["Gate"].values[0]))
-        gated_idx = np.array(samplemem.data.index)
-        panel1_m.set_data(panel1.data.loc[gated_idx])
-        df_add = pd.DataFrame({"Cell Type": np.tile("Mem Th", samplemem.counts), "Date": np.tile(date, samplemem.counts), "Plate": np.tile(plate, samplemem.counts),
-                               "VL1-H": panel1_m.data[['VL1-H']].values.reshape((samplemem.counts,)), "BL5-H": panel1_m.data[['BL5-H']].values.reshape((samplemem.counts,)),
-                               "RL1-H": panel1_m.data[['RL1-H']].values.reshape((samplemem.counts,))})
-        df = df.append(df_add)
+# Panel 4 TODO
 
-    return df, unstainedWell
+
+def plot_Tcells(sample, cd3cd4gate, Thelpgate, Treggate):
+    """Plotting naïve and memory T-regulatory and T-helper cells. Input transformed sample and gate functions for arguments"""
+
+    fig, axs = plt.subplots(2, 2)
+    sample.plot(["VL4-H", "VL6-H"], cmap=cm.viridis, gates=cd3cd4gate, gate_lw=2, ax=axs[0, 0])
+    axs[0, 0].set(xlabel="CD3", ylabel="CD4", title="Singlet Lymphocytes")
+
+    cd3cd4gated_sample = sample.gate(cd3cd4gate)
+    cd3cd4gated_sample.plot(["VL1-H", "BL1-H"], cmap=cm.viridis, gates=(Thelpgate, Treggate), gate_lw=2, ax=axs[0, 1])
+    axs[0, 1].set(xlabel="CD25", ylabel="CD127", title="CD3+CD4+ Cells")
+    axs[0, 1].set_xlim(right=7000)
+    axs[0, 1].set_ylim(top=7000)
+
+    ThelpGated_sample = cd3cd4gated_sample.gate(Thelpgate)
+    ThelpGated_sample.plot(["BL3-H"], color="blue", ax=axs[1, 0])
+    axs[1, 0].set(xlabel="CD45Ra", title="T helper")
+
+    TregGated_sample = cd3cd4gated_sample.gate(Treggate)
+    TregGated_sample.plot(["BL3-H"], color="blue", ax=axs[1, 1])
+    axs[1, 1].set(xlabel="CD45Ra", title="T reg")
+
+    return fig
