@@ -2,11 +2,11 @@
 This file includes various methods for flow cytometry analysis of fixed cells.
 """
 import os
-from os.path import dirname  # , join
+from os.path import dirname
 from pathlib import Path
-#import pandas as pd
-#import numpy as np
-from FlowCytometryTools import FCMeasurement  # , PolyGate, ThresholdGate
+import numpy as np
+from FlowCytometryTools import FCMeasurement
+
 path_here = dirname(dirname(__file__))
 
 
@@ -18,7 +18,7 @@ def combineWells(samples):
     return combinedSamples
 
 
-def importF(date, plate, wellRow, panel, wellNum=None):
+def importF(date, plate, wellRow, panel, channels, wellNum=None):
     """
     Import FCS files. Variable input: date in format mm-dd, plate #, panel #, and well letter. Output is a list of Data File Names in FCT Format
     Title/file names are returned in the array file --> later referenced in other functions as title/titles input argument
@@ -50,8 +50,17 @@ def importF(date, plate, wellRow, panel, wellNum=None):
 
     if wellNum is None:
         combinedSamples = combineWells(sample)  # Combines all files from samples
-        # compSample = applyMatrix(combinedSamples, compMatrix(date, plate, wellRow))  # Applies compensation matrix
-        return compSample, unstainedWell
+        combinedSamples = subtract_unstained_signal(combinedSamples, channels, unstainedWell)  # Subtracts background
+        return combinedSamples.transform("hlog", channels=channels)  # Transforms and returns
 
-    #compSample = applyMatrix(sample, compMatrix(date, plate, wellRow))
-    return compSample, unstainedWell
+    tsample = subtract_unstained_signal(sample[wellNum - 1], channels, unstainedWell)
+    return tsample.transform("hlog", channels=channels)
+
+
+def subtract_unstained_signal(sample, channels, unstainedWell):
+    """ Subtract mean unstained signal from all input channels for a given sample. """
+    for _, channel in enumerate(channels):
+        meanBackground = np.mean(unstainedWell.data[channel])  # Calculates mean unstained signal for given channel
+        sample[channel] = np.maximum(sample[channel] - meanBackground, 0.0)
+
+    return sample
