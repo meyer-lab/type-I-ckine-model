@@ -1,0 +1,21 @@
+﻿ForeCyt Compensation Matrix, File Version 1.0, Export On 4/26/2019, ForeCyt Version 6.2.6752, Experiment: 2019-04-26 compensation and quant beads , Analysis: Analysis 1, Plate: Plate 0001
+VL4-H,VL1-H,1.7734
+BL3-H,VL1-H,0.0
+BL5-H,VL1-H,0.0
+RL1-H,VL1-H,0.0
+VL1-H,VL4-H,1.1369
+BL3-H,VL4-H,5.8363
+BL5-H,VL4-H,0.1349
+RL1-H,VL4-H,0.1895
+VL1-H,BL3-H,0.0035
+VL4-H,BL3-H,16.7135
+BL5-H,BL3-H,1.6455
+RL1-H,BL3-H,0.2986
+VL1-H,BL5-H,0.0139
+VL4-H,BL5-H,0.2155
+BL3-H,BL5-H,1.2560
+RL1-H,BL5-H,0.0
+VL1-H,RL1-H,0.0
+VL4-H,RL1-H,0.0066
+BL3-H,RL1-H,0.0
+BL5-H,RL1-H,0.0399
