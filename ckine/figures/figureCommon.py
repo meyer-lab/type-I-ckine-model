@@ -11,7 +11,7 @@ from matplotlib import gridspec, pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 from ..imports import import_pstat
-from ..flow import nllsq, exp_dec
+from ..flow import exp_dec, bead_regression
 
 
 matplotlib.rcParams["legend.labelspacing"] = 0.2
@@ -200,18 +200,8 @@ def plot_fsc_ssc(axes, sample):
 
 def plot_regression(ax, sample, channels, receptors, recQuant, first=0, skip=False):
     """ Plots regression of signal to bead capacity. """
-    means = np.zeros(len(recQuant))
-    for i, s in enumerate(sample):
-        if skip:
-            if i < first:
-                continue
-        tform = s.transform("hlog", channels=channels[i - first])
-        data = tform.data[[channels[i - first]]][0:]
-        avg_signal = np.mean(data[str(channels[i - first])])
-        means[i - first] = avg_signal
+    means, lsq = bead_regression(sample, channels, recQuant, first, skip)
     ax.scatter(recQuant, means)
-
-    lsq = nllsq(recQuant, means)
     xs = np.linspace(np.amin(recQuant), np.amax(recQuant), num=1000)
     ax.plot(xs, exp_dec(xs, lsq))
     ax.set_xlabel("Bead Capacity")

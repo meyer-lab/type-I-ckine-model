@@ -97,8 +97,6 @@ def cellData(sample_i, gate, Tcells=True):
     # Number of events (AKA number of cells)
     cell_data = cells.get_data()
     cell_count = cells.get_data().shape[0]
-    # print(cell_count)
-    # print('Number of Treg cells:' + str(treg_count))
     return cell_data, cell_count
 
 
@@ -158,18 +156,34 @@ def count_data(sampleType, gate, Tcells=True):
     return count_array, data_array
 
 
-def exp_dec(x, pp):
-    """ Increasing exponential decay function general format. """
+def exp_dec(x, pp, soln=0):
+    """ 4PL regression function general format. """
     # https://www.myassays.com/four-parameter-logistic-regression.html
     A, B, C, D = pp
-    return ((A - D) / (1.0 + ((x / C) ** B))) + D
+    return ((A - D) / (1.0 + ((x / C)**B))) + D - soln
 
 
 def nllsq(x, y):
     """ Runs nonlinear least squares for exponential decay function. """
     lower = np.array([0.0, 0.1, 0.0, np.max(y)])
-    upper = np.array([np.min(y), 1.1, 1.0e6, 1.0e9])
+    upper = np.array([1.0, 1.1, 1.0e6, 1.0e9])
     x0 = (upper - lower) / 2.0 + lower
 
     lsq = least_squares(lambda pp: exp_dec(x, pp) - y, x0, bounds=(lower, upper), jac="3-point")
     return lsq.x
+
+
+def bead_regression(sample, channels_, recQuant, first=0, skip=False):
+    """ Implements regression of signal to bead capacity. """
+    means = np.zeros(len(recQuant))
+    for i, s in enumerate(sample):
+        if skip:
+            if i < first:
+                continue
+        avg_signal = np.mean(s[str(channels_[i - first])])
+        means[i - first] = avg_signal
+
+    means = means - np.amin(means)
+
+    lsq = nllsq(recQuant, means)
+    return means, lsq
