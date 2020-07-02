@@ -47,6 +47,7 @@ def makeFigure():
             for _, date in enumerate(dates):
                 for _, plate in enumerate(plates):
                     data = df_signal.loc[(df_signal["Cell Type"] == cell) & (df_signal["Date"] == date) & (df_signal["Plate"] == plate)][channels_[j]]
+                    data = data[data >= 0]
                     rec_counts = np.zeros(len(data))
                     for k, signal in enumerate(data):
                         A, B, C, D = lsq_params[j]
@@ -54,7 +55,6 @@ def makeFigure():
                     df_add = pd.DataFrame({"Cell Type": np.tile(cell, len(data)), "Receptor": np.tile(receptor, len(data)),
                                            "Count": rec_counts, "Date": np.tile(date, len(data)), "Plate": np.tile(plate, len(data))})
                     df_rec = df_rec.append(df_add)
-
     # write to csv
     update_path = path_here + "/data/receptor_levels.csv"
     df_rec.to_csv(str(update_path), index=False, header=True)
@@ -105,7 +105,7 @@ def run_regression():
     recQuant2 = np.array([0., 7311, 44263, 161876, 269561])  # CD132
 
     _, lsq_cd25 = bead_regression(sampleD, channels['D'], recQuant1)
-    _, lsq_cd122 = bead_regression(sampleE, channels['E'], recQuant2, 2, True)
-    _, lsq_cd132 = bead_regression(sampleF, channels['F'], recQuant1)
+    _, lsq_cd122 = bead_regression(sampleE, channels['E'], recQuant1, 2, True)
+    _, lsq_cd132 = bead_regression(sampleF, channels['F'], recQuant2)
 
     return lsq_cd25, lsq_cd122, lsq_cd132
