@@ -19,7 +19,7 @@ def combineWells(samples):
     return combinedSamples
 
 
-def importF(date, plate, wellRow, panel, wellNum=None):
+def importF(date, plate, wellRow, panel, wellNum=None, comp=True):
     """
     Import FCS files. Variable input: date in format mm-dd, plate #, panel #, and well letter. Output is a list of Data File Names in FCT Format
     Title/file names are returned in the array file --> later referenced in other functions as title/titles input argument
@@ -27,13 +27,14 @@ def importF(date, plate, wellRow, panel, wellNum=None):
     path_ = os.path.abspath("")
 
     pathname = path_ + "/ckine/data/flow/" + date + " Live PBMC Receptor Data/Plate " + plate + "/Plate " + plate + " - Panel " + str(panel) + " IL2R/"
-
     # Declare arrays and int
     file = []
     sample = []
     z = 0
     # Read in user input for file path and assign to array file
     pathlist = Path(r"" + str(pathname)).glob("**/*.fcs")
+
+    unstainedWell = "none"
 
     for path in pathlist:
         wellID = path.name.split("_")[1]
@@ -50,11 +51,16 @@ def importF(date, plate, wellRow, panel, wellNum=None):
     # The array sample contains data of each file in folder (one file per entry in array)
 
     if wellNum is None:
+        if comp is False:
+            combinedSamples = combineWells(sample)
+            return combinedSamples, unstainedWell
         combinedSamples = combineWells(sample)  # Combines all files from samples
         compSample = applyMatrix(combinedSamples, compMatrix(date, plate, wellRow))  # Applies compensation matrix
         return compSample, unstainedWell
 
-    compSample = applyMatrix(sample, compMatrix(date, plate, wellRow))
+    if comp is False:
+        return sample[wellNum - 1], unstainedWell
+    compSample = applyMatrix(sample[wellNum - 1], compMatrix(date, plate, wellRow))
     return compSample, unstainedWell
 
 
