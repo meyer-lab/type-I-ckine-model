@@ -19,7 +19,10 @@ pipeline {
         }
         stage('Build') {
           steps {
-            sh 'make -j 4'
+            sh 'make all -j 2'
+            lock ('manubot') {
+              sh 'make output/manuscript.html'
+            }
             archiveArtifacts artifacts: 'output/*.pdf, output/*.svg', onlyIfSuccessful: true
             publishHTML([allowMissing:false, alwaysLinkToLastBuild:false, keepAll:true, reportDir:'output', reportFiles:'manuscript.html', reportName:'Paper'])
             recordIssues qualityGates: [[threshold: 1, type: 'TOTAL_HIGH', unstable: true], [threshold: 10, type: 'TOTAL_NORMAL', unstable: true], [threshold: 30, type: 'TOTAL_LOW', unstable: true]], tools: [pyLint(pattern: 'pylint.log')]
