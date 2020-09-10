@@ -19,14 +19,14 @@ def combineWells(samples):
     return combinedSamples
 
 
-def importF(date, plate, wellRow, panel, wellNum=None, comp=True):
+def importF(date, plate, wellRow, panel, receptorType, wellNum, comp=True):
     """
     Import FCS files. Variable input: date in format mm-dd, plate #, panel #, and well letter. Output is a list of Data File Names in FCT Format
     Title/file names are returned in the array file --> later referenced in other functions as title/titles input argument
     """
     path_ = os.path.abspath("")
 
-    pathname = path_ + "/ckine/data/flow/" + date + " Live PBMC Receptor Data/Plate " + plate + "/Plate " + plate + " - Panel " + str(panel) + " IL2R/"
+    pathname = path_ + "/ckine/data/flow/" + date + " Live PBMC Receptor Data/Plate " + plate + "/Plate " + plate + " - Panel " + str(panel) + " " + receptorType + "/"
     isotypePathname = pathname + "/Isotypes/"
     # Declare arrays and int
     file = []
@@ -43,13 +43,12 @@ def importF(date, plate, wellRow, panel, wellNum=None, comp=True):
         compedIsoSample = applyMatrix(isoSample, compMatrix(date, plate, wellRow))
         isotypes.append(compedIsoSample)
 
-    unstainedWell = "none"
+    unstainedWell = None
     for path in pathlist:
         if path.name.split("_")[2] == "Isotype.fcs":
             continue
         wellID = path.name.split("_")[1]
         if wellID[0] == wellRow:
-            test = FCMeasurement(ID="Sample " + str(wellID), datafile=str(path))
             file.append(str(path))
         else:
             unstainedWell = FCMeasurement(ID="Unstained Sample", datafile=str(path))  # Stores data from unstainedWell separately
@@ -118,7 +117,7 @@ def compMatrix(date, plate, panel, invert=True):
             addedChannels.append(channelName)
             df2 = pd.DataFrame([[channelName, channelName, 100]], columns=['Channel1', 'Channel2', 'Comp'])  # Creates new row for dataframe
             df_comp = df_comp.append(df2, ignore_index=True)  # Adds row
-    # create square matrix from compensation values
+    # Create square matrix from compensation values
     df_matrix = pd.DataFrame(index=addedChannels, columns=addedChannels)  # df_matrix is now a square and has exactly one row and one column for each channel
     for i in df_matrix.index:
         for c in df_matrix.columns:
@@ -156,34 +155,49 @@ def import_gates():
 
 def apply_gates(date, plate, gates_df, subpopulations=False):
     """ Constructs dataframe with channels relevant to receptor quantification. """
-    receptors = ['CD25', 'CD122', 'CD132']
+    if date == "5-16":
+        receptors = ['CD127']
+        channels = ['BL1-H']
+    else:
+        receptors = ['CD25', 'CD122', 'CD132']
+        channels = ["VL1-H", "BL5-H", "RL1-H"]
     for i, r in enumerate(receptors):
         cellTypes = ['T-helper', 'T-reg', 'NK', 'CD8+']
         for j, cellType in enumerate(cellTypes):
             if i == 0 and j == 0:
                 df, unstainedWell, isotypes = samp_Gate(date, plate, gates_df, cellType, receptor=r, subPop=subpopulations)
-                df = subtract_unstained_signal(df, ["VL1-H", "BL5-H", "RL1-H"], ["CD25", "CD122", "CD132"], unstainedWell, isotypes)
+                df = subtract_unstained_signal(df, channels, receptors, unstainedWell, isotypes)
             else:
                 df2, unstainedWell2, isotypes2 = samp_Gate(date, plate, gates_df, cellType, receptor=r, subPop=subpopulations)
-                df2 = subtract_unstained_signal(df2, ["VL1-H", "BL5-H", "RL1-H"], ["CD25", "CD122", "CD132"], unstainedWell2, isotypes2)
+                df2 = subtract_unstained_signal(df2, channels, receptors, unstainedWell2, isotypes2)
                 df = df.append(df2)
+
     return df
 
 
 def samp_Gate(date, plate, gates_df, cellType, receptor, subPop=False):
     """ Returns gated sample for a given date and plate. """
     # import data and create transformed df for gating
-    Dict = {'CD25': 1, 'CD122': 3, 'CD132': 5}
-    wellN = Dict[receptor]
+    Dict = {'CD127': 1, 'CD25': 1, 'CD122': 3, 'CD132': 5}
+    wellNum = Dict[receptor]
+
+    if receptor == 'CD127':
+        rType = 'IL7R'
+    else:
+        rType = 'IL2R'
 
     tchannels, subPopName, row, panelNum = cellGateDat(cellType)
-    panel, unstainedWell, isotypes = importF(date, plate, row, panelNum, wellNum=wellN)
+    if date == '5-16' and (row == 'C' or row == 'B'):
+        row = 'A'
+        panelNum = 1
+
+    panel, unstainedWell, isotypes = importF(date, plate, row, panelNum, rType, wellNum)
 
     panel_t = panel.transform("tlog", channels=tchannels)  # Creates copy of panel to transform and gate
 
-    df = pd.DataFrame(columns=["Cell Type", "Date", "Plate", "VL1-H", "BL5-H", "RL1-H"])
+    df = pd.DataFrame(columns=["Cell Type", "Date", "Plate", "VL1-H", "BL5-H", "RL1-H", "BL1-H"])
 
-    # implement gating, revert tlog, and add to dataframe
+    # Implement gating, revert tlog, and add to dataframe
     if cellType in ('T-reg', 'T-helper'):
         samplecd3cd4 = panel_t.gate(eval(gates_df.loc[(gates_df["Name"] == 'CD3CD4') &
                                                       (gates_df["Date"] == date) & (gates_df["Plate"] == float(plate))]["Gate"].values[0]))
@@ -198,11 +212,11 @@ def samp_Gate(date, plate, gates_df, cellType, receptor, subPop=False):
     panel.set_data(panel.data.loc[gated_idx])  # Selects only the corresponding data points from panel1(untransformed) based on gated points from panel1_t
     df_add = pd.DataFrame({"Cell Type": np.tile(cellType, sample.counts), "Date": np.tile(date, sample.counts), "Plate": np.tile(plate, sample.counts),
                            "VL1-H": panel.data[["VL1-H"]].values.reshape((sample.counts,)), "BL5-H": panel.data[["BL5-H"]].values.reshape((sample.counts,)),
-                           "RL1-H": panel.data[["RL1-H"]].values.reshape((sample.counts,))})
+                           "RL1-H": panel.data[["RL1-H"]].values.reshape((sample.counts,)), "BL1-H": panel.data[["BL1-H"]].values.reshape((sample.counts,))})
     df = df.append(df_add)
     df['Receptor'] = str(receptor)
 
-    # separates memory and naive populations and adds to dataframe
+    # Separates memory and naive populations and adds to dataframe
     if subPop:
         for subpopulation in subPopName:
             sampleSub = sample.gate(eval(gates_df.loc[(gates_df["Name"] == subpopulation) &
