@@ -51,7 +51,7 @@ download: .dataURLs.txt
 	wget -nv -N -P ./ckine/data/flow/ -i .dataURLs.txt
 	unzip -qd ./ckine/data/flow/ './ckine/data/flow/2019-03-15 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - NK plate.zip'
 	unzip -qd ./ckine/data/flow/ './ckine/data/flow/2019-04-18 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - Treg plate - NEW PBMC LOT.zip'
-	tar -x --strip-components=1 -C ./ckine/data/flow/ -f ./ckine/data/flow/receptor-profiling.tar.xz
+	tar -x --strip-components=1 -C ./ckine/data/flow/ -f ./ckine/data/flow/receptor-profiling-20200909.tar.xz
 
 test: venv
 	. venv/bin/activate && pytest
