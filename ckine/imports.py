@@ -124,3 +124,12 @@ def importMoments():
     path = os.path.dirname(os.path.dirname(__file__))
     momentDF = pds.read_csv(join(path, "ckine/data/pSTATMomentData.csv"), encoding="latin1")
     return momentDF
+
+
+def import_pstat_all():
+    """ Loads CSV file containing all WT and Mutein pSTAT responses and moments"""
+    WTbivDF = pds.read_csv(join(path_here, "ckine/data/WTBivMutpSTAT.csv"), encoding="latin1")
+    monDF = pds.read_csv(join(path_here, "ckine/data/MonMutpSTAT.csv"), encoding="latin1")
+    respDF = pds.concat([WTbivDF, monDF])
+
+    return respDF
