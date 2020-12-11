@@ -13,4 +13,5 @@ pandoc-fignos==2.3.1
 pandoc-eqnos==2.3.0
 pandoc-tablenos==2.2.2
 jupyter==1.0.0
+tensorly==0.5.1
 git+git://github.com/eyurtsev/FlowCytometryTools.git@093057486ab0aeb2938537ddcfea36d3c1d14fd3

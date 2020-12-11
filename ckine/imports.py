@@ -132,4 +132,7 @@ def import_pstat_all():
     monDF = pds.read_csv(join(path_here, "ckine/data/MonMutpSTAT.csv"), encoding="latin1")
     respDF = pds.concat([WTbivDF, monDF])
 
+    respDF.loc[(respDF.Bivalent == 0), "Ligand"] = (respDF.loc[(respDF.Bivalent == 0)].Ligand + " (Mono)").values
+    respDF.loc[(respDF.Bivalent == 1), "Ligand"] = (respDF.loc[(respDF.Bivalent == 1)].Ligand + " (Biv)").values
+
     return respDF
