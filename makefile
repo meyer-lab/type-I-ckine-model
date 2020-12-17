@@ -31,7 +31,8 @@ output/manuscript.html: venv output/manuscript.md $(patsubst %, output/figure%.s
 	cp output/*.svg output/output/
 	. venv/bin/activate && pandoc --verbose \
 		--defaults=./common/templates/manubot/pandoc/common.yaml \
-		--defaults=./common/templates/manubot/pandoc/html.yaml
+		--defaults=./common/templates/manubot/pandoc/html.yaml \
+		output/manuscript.md
 
 clean:
 	mv output/requests-cache.sqlite requests-cache.sqlite || true
