@@ -21,5 +21,3 @@ jobs:
     - name: Test with pytest
       run: |
         pytest --cov=ckine --cov-report=xml --cov-config=.github/workflows/coveragerc
-    - name: Lint with pylint
-      run: pylint --rcfile=./common/pylintrc --fail-under=9 ckine
