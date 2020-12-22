@@ -1,0 +1,13 @@
+ForeCyt Compensation Matrix, File Version 1.0, Export On 11/9/2020, ForeCyt Version 8.1.7524, Experiment: 2019-11-08 pSTAT5 timecourse monomeric IL2s, Analysis: Analysis 1, Plate: Plate 0003
+BL1-H,VL4-H,0
+BL2-H,VL4-H,0.3187
+RL1-H,VL4-H,0.7010
+VL4-H,BL1-H,0.1058
+BL2-H,BL1-H,15.8130
+RL1-H,BL1-H,0.6078
+VL4-H,BL2-H,17.5810
+BL1-H,BL2-H,6.2238
+RL1-H,BL2-H,6.6667
+VL4-H,RL1-H,0.0879
+BL1-H,RL1-H,0
+BL2-H,RL1-H,0
