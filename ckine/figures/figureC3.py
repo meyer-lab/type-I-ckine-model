@@ -31,18 +31,20 @@ def makeFigure():
     NKsample2, _ = importF(path_here + "/data/flow/2019-03-15 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - NK plate/", "B")
     Tsample15, _ = importF(path_here + "/data/flow/2019-04-18 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - Treg plate - NEW PBMC LOT/", "F")
     NKsample15, _ = importF(path_here + "/data/flow/2019-03-15 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - NK plate/", "F")
+    Tdate = "4/18/2019"
+    NKdate = "4/18/2019"
 
-    violinDist(Tsample2, Tsample15, ax[0], "treg", TitlesT[0], Tcells=True)
-    violinDist(Tsample2, Tsample15, ax[1], "nonTreg", TitlesT[1], Tcells=True)
-    violinDist(NKsample2, NKsample15, ax[2], "nk", TitlesNK[0], Tcells=False)
-    violinDist(NKsample2, NKsample15, ax[3], "cd", TitlesNK[1], Tcells=False)
+    violinDist(Tsample2, Tsample15, ax[0], "treg", TitlesT[0], Tdate, Tcells=True)
+    violinDist(Tsample2, Tsample15, ax[1], "nonTreg", TitlesT[1], Tdate, Tcells=True)
+    violinDist(NKsample2, NKsample15, ax[2], "nk", TitlesNK[0], NKdate, Tcells=False)
+    violinDist(NKsample2, NKsample15, ax[3], "cd", TitlesNK[1], NKdate, Tcells=False)
 
     for i, cell in enumerate(gatesT):
-        StatMV(Tsample2, ax[i + 4], cell, "IL2", TitlesT[i], Tcells=True)
-        StatMV(Tsample15, ax[i + 8], cell, "IL15", TitlesT[i], Tcells=True)
+        StatMV(Tsample2, ax[i + 4], cell, "IL2", TitlesT[i], Tdate, Tcells=True)
+        StatMV(Tsample15, ax[i + 8], cell, "IL15", TitlesT[i], Tdate, Tcells=True)
     for j, cell in enumerate(gatesNK):
-        StatMV(NKsample2, ax[j + 6], cell, "IL2", TitlesNK[j], Tcells=False)
-        StatMV(NKsample15, ax[j + 10], cell, "IL15", TitlesNK[j], Tcells=False)
+        StatMV(NKsample2, ax[j + 6], cell, "IL2", TitlesNK[j], Tdate, Tcells=False)
+        StatMV(NKsample15, ax[j + 10], cell, "IL15", TitlesNK[j], Tdate, Tcells=False)
 
     return f
 
@@ -54,7 +56,7 @@ def global_legend(ax):
     ax.legend(handles=[orange, blue], bbox_to_anchor=(0, 1), loc="upper left")
 
 
-def StatMV(sampleType, ax, cell_type, ligand, title, Tcells=True):
+def StatMV(sampleType, ax, cell_type, ligand, title, date, Tcells=True):
     """
     Calculate mean and variance of a sample in a pandas dataframe, and plot.
     """
@@ -67,7 +69,7 @@ def StatMV(sampleType, ax, cell_type, ligand, title, Tcells=True):
         statcol = "BL2-H"
 
     if cell_type:
-        gates = gating(cell_type)
+        gates = gating(cell_type, date, True)
         _, alldata = count_data(sampleType, gates, Tcells)  # returns array of dfs in case of gate or no gate
 
     else:
@@ -106,7 +108,7 @@ def StatMV(sampleType, ax, cell_type, ligand, title, Tcells=True):
     return MVdf
 
 
-def violinDist(sampleType2, sampleType15, ax, cell_type, title, Tcells=True):
+def violinDist(sampleType2, sampleType15, ax, cell_type, title, date, Tcells=True):
     """
     Calculate mean and variance of a sample in a pandas dataframe, and plot.
     """
@@ -120,7 +122,7 @@ def violinDist(sampleType2, sampleType15, ax, cell_type, title, Tcells=True):
         statcol = "BL2-H"
 
     if cell_type:
-        gates = gating(cell_type)
+        gates = gating(cell_type, date, True)
         _, alldata2 = count_data(sampleType2, gates, Tcells)  # returns array of dfs in case of gate or no gate
         _, alldata15 = count_data(sampleType15, gates, Tcells)  # returns array of dfs in case of gate or no gate
 

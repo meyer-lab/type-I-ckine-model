@@ -25,16 +25,18 @@ def makeFigure():
     gates = [False, "treg", "nonTreg"]
     Titles = ["Tcells", "T-regs", "T-helper"]
     Tsample, _ = importF(path_here + "/data/flow/2019-04-18 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - Treg plate - NEW PBMC LOT/", "B")
+    Tdate = "4/18/2019"
     Nksample, _ = importF(path_here + "/data/flow/2019-03-15 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - NK plate/", "B")
+    NKdate = "3/15/2019"
     for i, cell in enumerate(gates):
-        StatGini(Tsample, ax[i], cell, Tcells=True)
+        StatGini(Tsample, ax[i], cell, Tdate, Tcells=True)
         ax[i].set_title(Titles[i])
-        StatMV(Tsample, ax[i + 4], cell, Tcells=True)
+        StatMV(Tsample, ax[i + 4], cell, Tdate, Tcells=True)
         ax[i + 4].set_title(Titles[i])
 
-    StatGini(Nksample, ax[3], "nk", Tcells=False)
+    StatGini(Nksample, ax[3], "nk", NKdate, Tcells=False)
     ax[7].set_title("NK")
-    StatMV(Nksample, ax[7], "nk", Tcells=False)
+    StatMV(Nksample, ax[7], "nk", NKdate, Tcells=False)
     ax[7].set_title("NK")
 
     # global_legend(ax[7])
@@ -49,7 +51,7 @@ def global_legend(ax):
     ax.legend(handles=[orange, blue], bbox_to_anchor=(0, 1), loc="upper left")
 
 
-def StatMV(sampleType, ax, cell_type, Tcells=True):
+def StatMV(sampleType, ax, cell_type, date=False, Tcells=True):
     """
     Calculate mean and variance of a sample in a pandas dataframe, and plot.
     """
@@ -62,7 +64,7 @@ def StatMV(sampleType, ax, cell_type, Tcells=True):
         statcol = "BL2-H"
 
     if cell_type:
-        gates = gating(cell_type)
+        gates = gating(cell_type, date, True)
         _, alldata = count_data(sampleType, gates, Tcells)  # returns array of dfs in case of gate or no gate
 
     else:

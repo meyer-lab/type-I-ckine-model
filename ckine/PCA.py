@@ -324,7 +324,7 @@ def pcaAllCellType(sampleType, Tcells=True):
 # ************************Dose Response by PCA******************************
 
 
-def PCADoseResponse(sampleType, PC1Bnds, PC2Bnds, cell_type, Tcells=True):
+def PCADoseResponse(sampleType, PC1Bnds, PC2Bnds, cell_type, date, Tcells=True):
     """
     Given data from a time Point and two PC bounds, the dose response curve will be calculated and graphed
     (needs folder with FCS from one time point)
@@ -332,7 +332,7 @@ def PCADoseResponse(sampleType, PC1Bnds, PC2Bnds, cell_type, Tcells=True):
     dosemat = np.array([84, 28, 9.333333, 3.111, 1.037037, 0.345679, 0.115226, 0.038409, 0.012803, 0.004268, 0.001423, 0.000474])
     pSTATvals = np.zeros([1, dosemat.size])
     if cell_type:
-        gates = gating(cell_type)
+        gates = gating(cell_type, date, True)
         _, alldata = count_data(sampleType, gates, Tcells)
 
     for i, sample in enumerate(sampleType):
@@ -368,7 +368,7 @@ def PCdatTransform(xf, pstat):
     return PCApd
 
 
-def StatGini(sampleType, ax, cell_type, Tcells=True):
+def StatGini(sampleType, ax, cell_type, date, Tcells=True):
     """
     Define the Gini Coefficient of Pstat Vals Across a timepoint for either whole or gated population.
     Takes a folder of samples, a timepoint (string), a boolean check for cell type and an optional gate parameter.
@@ -383,7 +383,7 @@ def StatGini(sampleType, ax, cell_type, Tcells=True):
         statcol = "BL2-H"
 
     if cell_type:
-        gates = gating(cell_type)
+        gates = gating(cell_type, date, True)
         _, alldata = count_data(sampleType, gates, Tcells)  # returns array of dfs in case of gate or no gate
 
     else:
