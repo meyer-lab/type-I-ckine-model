@@ -122,7 +122,6 @@ def plot_tFac_Cells(ax, tFac, respDF):
     """Plots tensor factorization of cells"""
     cells = respDF.Cell.unique()
     cellFacs = tFac[1][3]
-    print(cellFacs)
 
     markersCells = ["P", "*", "D", "s"]
     colors = cm.rainbow(np.linspace(0, 1, len(cells)))

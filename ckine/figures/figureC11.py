@@ -60,6 +60,8 @@ def StatMV():
     MVdf = pds.DataFrame(columns={"Date", "Time", "Ligand", "Dose", "Mean", "Variance", "Skew", "Kurtosis", "alphStatCov"})
     alldata = []
     dosemat = np.array([[84, 28, 9.333333, 3.111, 1.037037, 0.345679, 0.115226, 0.038409, 0.012803, 0.004268, 0.001423, 0.000474]])
+    # T_matrix = compMatrix("2019-11-08", "1", "A")  # Create matrix 1
+    # Cd8_NKmatrix = compMatrix("2019-11-08", "1", "B")  # Create matrix 2
 
     print("Starting Muteins")
 
@@ -88,6 +90,9 @@ def StatMV():
                         IL2Ra_array = dat_array[[IL2RaCol]]
                         IL2Ra_array = IL2Ra_array.to_numpy()
                         IL2Ra_array = IL2Ra_array.clip(min=1)
+                        IL2Ra_array = IL2Ra_array / 1.5  # convert roughly to number from signal
+                        IL2Ra_array = np.reshape(IL2Ra_array[stat_array != np.amax(stat_array)], (-1, 1))  # Remove random exploding value
+                        stat_array = np.reshape(stat_array[stat_array != np.amax(stat_array)], (-1, 1))  # Remove random exploding value
                         timelig = mutFunc(row, filename)
                         if stat_array.size == 0:
                             MVdf = MVdf.append(pds.DataFrame.from_dict({"Date": dates[i], "Time": timelig[0], "Cell": TitlesT[k], "Ligand": timelig[1], "Dose": dosemat[0, ii], "Mean": [
@@ -115,6 +120,7 @@ def StatMV():
                         stat_array = dat_array[[statcol]]
                         stat_array = stat_array.to_numpy()
                         stat_array = stat_array.clip(min=1)  # remove small percentage of negative pstat values
+                        stat_array = np.reshape(stat_array[stat_array != np.amax(stat_array)], (-1, 1))  # Remove random exploding value
                         timelig = mutFunc(row, filename)
                         if stat_array.size == 0:
 
