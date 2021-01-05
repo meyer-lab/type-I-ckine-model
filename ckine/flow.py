@@ -49,7 +49,7 @@ def cd4():
 
 def cd4monMut():
     """ Function for gating CD4+ cells (generates T cells) - for monomeric Mut Experiments. """
-    cd41 = ThresholdGate(6500.0, ("VL4-H"), region="above", name="cd41")
+    cd41 = ThresholdGate(6400.0, ("VL4-H"), region="above", name="cd41")
     cd42 = ThresholdGate(8000.0, ("VL4-H"), region="below", name="cd42")
     cd4_gate = cd41 & cd42
     return cd4_gate
