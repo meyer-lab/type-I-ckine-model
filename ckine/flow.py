@@ -55,10 +55,10 @@ def cd4monMut():
     return cd4_gate
 
 
-def import_gates_pSTAT(date, cellType):
+def import_gates_pSTAT(date, cellType, rep):
     """Imports the gates for pSTAT signaling experiments"""
     gateDF = pd.read_csv(path_here + "/ckine/data/pSTATgates.csv")
-    gates = gateDF.loc[(gateDF["Date"] == date) & (gateDF["Cell Type"] == cellType)].Gates
+    gates = gateDF.loc[(gateDF["Date"] == date) & (gateDF["Cell Type"] == cellType) & (gateDF["Replicate"] == rep)].Gates
     return eval(gates.values[0])
 
 
@@ -87,13 +87,13 @@ regionSpec_["tregMem"] = regionSpec_["THelpMem"] = "below"
 regionSpec_["tregNaive"] = regionSpec_["THelpN"] = "above"
 
 
-def gating(cell_type, date=False, Mut=False):
+def gating(cell_type, date=False, Mut=False, rep=0):
     """ Creates and returns the cell type gate on CD4+ cells. """
     if not Mut:
         cell1 = QuadGate(vert[cell_type][0], channels[cell_type], region=regionSpec[cell_type][0], name=(cell_type + "1"))
         cell2 = QuadGate(vert[cell_type][1], channels[cell_type], region=regionSpec[cell_type][1], name=(cell_type + "2"))
     else:
-        cell1 = import_gates_pSTAT(date, cell_type)
+        cell1 = import_gates_pSTAT(date, cell_type, rep)
     if regionSpec_[cell_type] is not None:
         cd45 = ThresholdGate(6300, ("BL3-H"), region=regionSpec_[cell_type], name="cd45")
         gate = cell1 & cell2 & cd4() & cd45

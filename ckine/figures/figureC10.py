@@ -56,6 +56,7 @@ def StatMV():
     MVdf = pds.DataFrame(columns={"Date", "Time", "Ligand", "Dose", "Mean", "Variance", "Skew", "Kurtosis", "alphStatCov"})
     alldata = []
     dosemat = np.array([[84, 28, 9.333333, 3.111, 1.037037, 0.345679, 0.115226, 0.038409, 0.012803, 0.004268, 0.001423, 0.000474]])
+    repList = [0, 0, 0, 0, 0, 0]
 
     T_matrix = compMatrix("2019-11-08", "1", "A")  # Create matrix 1
     Cd8_NKmatrix = compMatrix("2019-11-08", "1", "B")  # Create matrix 2
@@ -76,7 +77,7 @@ def StatMV():
                     if cell_type:
                         for jj, subSample in enumerate(sample):
                             sample[jj] = applyMatrix(subSample, T_matrix)
-                        gates = gating(cell_type, dates[i], True)
+                        gates = gating(cell_type, dates[i], True, repList[i])
                         _, alldata = count_data(sample, gates, Tcells, True)
                     else:
                         for jj, samplejj in enumerate(sample):
@@ -113,7 +114,7 @@ def StatMV():
                         if cell_type:
                             for jj, subSample in enumerate(sample):
                                 sample[jj] = applyMatrix(subSample, Cd8_NKmatrix)
-                            gates = gating(cell_type, dates[i], True)
+                            gates = gating(cell_type, dates[i], True, repList[i])
                             _, alldata = count_data(sample, gates, Tcells, True)
                         else:
                             for jj, samplejj in enumerate(sample):
@@ -146,6 +147,7 @@ def StatMV():
                  "/home/brianoj/Muteins 060-088 Nk/2019-05-02 IL2-060 IL2-088 NK plate",
                  "/home/brianoj/Muteins 062-097 Nk/2019-05-02 IL2-062 IL2-097 NK plate"]
     dates = ["4/19/2019", "4/19/2019", "5/2/2019", "5/2/2019", "4/19/2019", "4/19/2019", "5/2/2019", "5/2/2019"]
+    repList = [0, 1, 0, 1, 0, 1, 0, 1]
 
     print("Starting Muteins")
 
@@ -163,7 +165,7 @@ def StatMV():
                     if cell_type:
                         for jj, subSample in enumerate(sample):
                             sample[jj] = applyMatrix(subSample, T_matrix)
-                        gates = gating(cell_type, dates[i], True)
+                        gates = gating(cell_type, dates[i], True, repList[i])
                         _, alldata = count_data(sample, gates, Tcells, True)
                     else:
                         for jj, samplejj in enumerate(sample):
@@ -199,7 +201,7 @@ def StatMV():
                         if cell_type:
                             for jj, subSample in enumerate(sample):
                                 sample[jj] = applyMatrix(subSample, Cd8_NKmatrix)
-                            gates = gating(cell_type, dates[i], True)
+                            gates = gating(cell_type, dates[i], True, repList[i])
                             _, alldata = count_data(sample, gates, Tcells, True)
                         else:
                             for jj, samplejj in enumerate(sample):

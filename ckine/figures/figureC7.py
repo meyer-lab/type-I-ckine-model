@@ -24,7 +24,7 @@ def makeFigure():
     # Imports receptor levels from .csv created by figC5
     respDF = import_pstat_all()
     respTensor = makeTensor(respDF)
-    tFacAll = factorTensor(respTensor, 4)
+    tFacAll = factorTensor(respTensor, 3)
     tFacAll.normalize()
 
     R2Xplot(ax[0], respTensor, 5)

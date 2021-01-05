@@ -50,6 +50,7 @@ def StatMV():
                  "ckine/data/2019-12-05 monomer IL-2 Fc signaling/NK CD8 T cells - IL2-109 mono, IL2-118 mono",
                  "ckine/data/2019-12-05 monomer IL-2 Fc signaling/NK CD8 T cells - IL2-110 mono, C-term N88D mono"]
     dates = ["11/8/2019", "11/8/2019", "11/27/2019", "12/5/2019", "12/5/2019", "11/8/2019", "11/8/2019", "11/27/2019", "12/5/2019", "12/5/2019"]
+    repList = [0, 1, 0, 0, 1, 0, 1, 0, 0, 1]
     rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
     cellTypesT = ['treg', 'nonTreg']
     cellTypesNK = ["nk", "cd"]
@@ -59,9 +60,6 @@ def StatMV():
     MVdf = pds.DataFrame(columns={"Date", "Time", "Ligand", "Dose", "Mean", "Variance", "Skew", "Kurtosis", "alphStatCov"})
     alldata = []
     dosemat = np.array([[84, 28, 9.333333, 3.111, 1.037037, 0.345679, 0.115226, 0.038409, 0.012803, 0.004268, 0.001423, 0.000474]])
-    T_matrix = compMatrix("2019-11-08", "1", "A")  # Create matrix 1
-    Cd8_NKmatrix = compMatrix("2019-11-08", "1", "B")  # Create matrix 2
-    print(join(path_here, "/data/"))
 
     print("Starting Muteins")
 
@@ -78,9 +76,9 @@ def StatMV():
                     print(filename)
                     sample, _ = importF(filename, row)
                     if cell_type:
-                        for jj, subSample in enumerate(sample):
-                            sample[jj] = applyMatrix(subSample, T_matrix)
-                        gates = gating(cell_type, dates[i], True)
+                        # for jj, subSample in enumerate(sample):
+                        #    sample[jj] = applyMatrix(subSample, T_matrix)
+                        gates = gating(cell_type, dates[i], True, repList[i])
                         _, alldata = count_data(sample, gates, Tcells, True)
                     for ii, sampleii in enumerate(sample):  # get pstat data and put it into list form
                         dat_array = alldata[ii]
@@ -108,9 +106,9 @@ def StatMV():
                     print(filename)
                     sample, _ = importF(filename, row)
                     if cell_type:
-                        for jj, subSample in enumerate(sample):
-                            sample[jj] = applyMatrix(subSample, Cd8_NKmatrix)
-                        gates = gating(cell_type, dates[i], True)
+                        # for jj, subSample in enumerate(sample):
+                        #    sample[jj] = applyMatrix(subSample, Cd8_NKmatrix)
+                        gates = gating(cell_type, dates[i], True, repList[i])
                         _, alldata = count_data(sample, gates, Tcells, True)
                     for ii, sampleii in enumerate(sample):  # get pstat data and put it into list form
                         dat_array = alldata[ii]
