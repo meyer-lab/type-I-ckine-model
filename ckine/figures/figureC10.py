@@ -103,7 +103,7 @@ def StatMV():
                                 stat_array), "Skew": stats.skew(stat_array), "Kurtosis": stats.kurtosis(stat_array), "alphStatCov": [np.cov(stat_array.flatten(), IL2Ra_array.flatten())[1, 0]], "Bivalent": [0]}))
 
                     if j == 3 or j == 7:
-                        MVdf['Mean'] = MVdf['Mean'] - MVdf['Mean'].min()
+                        MVdf['Mean'] = MVdf['Mean'] - MVdf.loc[(MVdf.Dose <= 0.001423)].Mean.min()
                         masterMVdf = masterMVdf.append(MVdf)
                         MVdf = pds.DataFrame(columns={"Date", "Time", "Ligand", "Dose", "Mean", "Variance", "Skew", "Kurtosis", "alphStatCov", "Bivalent"})
         else:
@@ -137,7 +137,7 @@ def StatMV():
                                 MVdf = MVdf.append(pds.DataFrame.from_dict({"Date": dates[i], "Time": timeFunc(row), "Cell": TitlesNK[k], "Ligand": cytFunc(row), "Dose": dosemat[0, ii], "Mean": np.mean(
                                     stat_array), "Variance": np.var(stat_array), "Skew": stats.skew(stat_array), "Kurtosis": stats.kurtosis(stat_array), "alphStatCov": [0], "Bivalent": [0]}))
                     if j == 3 or j == 7:
-                        MVdf['Mean'] = MVdf['Mean'] - MVdf['Mean'].min()
+                        MVdf['Mean'] = MVdf['Mean'] - MVdf.loc[(MVdf.Dose <= 0.001423)].Mean.min()
                         masterMVdf = masterMVdf.append(MVdf)
                         MVdf = pds.DataFrame(columns={"Date", "Time", "Ligand", "Dose", "Mean", "Variance", "Skew", "Kurtosis", "alphStatCov", "Bivalent"})
 
@@ -194,7 +194,7 @@ def StatMV():
                             MVdf = MVdf.append(pds.DataFrame.from_dict({"Date": dates[i], "Time": timelig[0], "Cell": TitlesT[k], "Ligand": timelig[1], "Dose": dosemat[0, ii], "Mean": np.mean(stat_array), "Variance": np.var(
                                 stat_array), "Skew": stats.skew(stat_array), "Kurtosis": stats.kurtosis(stat_array), "alphStatCov": [np.cov(stat_array.flatten(), IL2Ra_array.flatten())[1, 0]], "Bivalent": timelig[2]}))
                     if j == 3 or j == 7:
-                        MVdf['Mean'] = MVdf['Mean'] - MVdf['Mean'].min()
+                        MVdf['Mean'] = MVdf['Mean'] - MVdf.loc[(MVdf.Dose <= 0.001423)].Mean.min()
                         masterMVdf = masterMVdf.append(MVdf)
                         MVdf = pds.DataFrame(columns={"Date", "Time", "Ligand", "Dose", "Mean", "Variance", "Skew", "Kurtosis", "alphStatCov", "Bivalent"})
         else:
@@ -230,10 +230,11 @@ def StatMV():
                                     stat_array), "Variance": np.var(stat_array), "Skew": stats.skew(stat_array), "Kurtosis": stats.kurtosis(stat_array), "alphStatCov": [0], "Bivalent": timelig[2]}))
 
                     if j == 3 or j == 7:
-                        MVdf['Mean'] = MVdf['Mean'] - MVdf['Mean'].min()
+                        MVdf['Mean'] = MVdf['Mean'] - MVdf.loc[(MVdf.Dose <= 0.001423)].Mean.min()
                         masterMVdf = masterMVdf.append(MVdf)
                         MVdf = pds.DataFrame(columns={"Date", "Time", "Ligand", "Dose", "Mean", "Variance", "Skew", "Kurtosis", "alphStatCov", "Bivalent"})
 
+    masterMVdf.Mean = masterMVdf.Mean.clip(lower=0)
     masterMVdf.to_csv("WTDimericMutSingleCellData.csv", index=False)
 
     return MVdf
