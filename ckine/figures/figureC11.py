@@ -19,7 +19,6 @@ def makeFigure():
     ax, f = getSetup((10, 10), (4, 4))
 
     subplotLabel(ax)
-
     StatMV()
 
     # global_legend(ax[7])

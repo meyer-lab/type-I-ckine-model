@@ -136,3 +136,28 @@ def import_pstat_all():
     respDF.loc[(respDF.Bivalent == 1), "Ligand"] = (respDF.loc[(respDF.Bivalent == 1)].Ligand + " (Biv)").values
 
     return respDF
+
+
+def importSigma(cellType):
+    """ Loads and formats the receptor covariance matrix for variance propagation """
+    sigma = np.zeros((3, 3))
+
+    momentDF = pds.read_csv(join(path_here, "ckine/data/receptor_moments.csv"), encoding="latin1")
+    covDF = pds.read_csv(join(path_here, "ckine/data/receptor_covariances.csv"), encoding="latin1")
+
+    momentDF = momentDF.loc[:, ["Cell Type", "Receptor", "Variance"]]
+    momentDF = momentDF.groupby(["Cell Type", "Receptor"]).mean().reset_index()
+    print(momentDF)
+    momentDF = momentDF.loc[(momentDF["Cell Type"] == cellType)]
+
+    for i in range(0, 3):
+        sigma[i, i] = momentDF["Variance"].values[i]
+
+    covDF = covDF.loc[:, ["Cell Type", "CD25:Receptor", "Covariance"]]
+    covDF = covDF.groupby(["Cell Type", "CD25:Receptor"]).mean().reset_index()
+    covDF = covDF.loc[(covDF["Cell Type"] == cellType)]
+
+    for i in range(1, 3):
+        sigma[0, i] = sigma[i, 0] = covDF["Covariance"].values[i - 1]
+
+    return sigma
