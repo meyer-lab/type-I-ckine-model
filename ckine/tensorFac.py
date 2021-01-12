@@ -10,7 +10,7 @@ import matplotlib.cm as cm
 from tensorly.decomposition import non_negative_parafac
 
 
-def makeTensor(sigDF):
+def makeTensor(sigDF, Variance=False):
     """Makes tensor of data with dimensions mutein x time point x concentration x cell type"""
     ligands = sigDF.Ligand.unique()
     tps = sigDF.Time.unique()
@@ -22,7 +22,10 @@ def makeTensor(sigDF):
         for j, tp in enumerate(tps):
             for k, conc in enumerate(concs):
                 for ii, cell in enumerate(cellTypes):
-                    entry = sigDF.loc[(sigDF.Ligand == lig) & (sigDF.Time == tp) & (sigDF.Dose == conc) & (sigDF.Cell == cell)].Mean.values
+                    if not Variance:
+                        entry = sigDF.loc[(sigDF.Ligand == lig) & (sigDF.Time == tp) & (sigDF.Dose == conc) & (sigDF.Cell == cell)].Mean.values
+                    else:
+                        entry = sigDF.loc[(sigDF.Ligand == lig) & (sigDF.Time == tp) & (sigDF.Dose == conc) & (sigDF.Cell == cell)].Variance.values
                     if len(entry) >= 1:
                         tensor[i, j, k, ii] = np.mean(entry)
     # Normalize
@@ -102,7 +105,7 @@ def plot_tFac_Time(ax, tFac, respDF):
         ax.plot(tps, timeFacs[:, i], marker=markersTimes[i], label="Component " + str(i + 1))
 
     ax.legend()
-    ax.set(title="Time", xlabel="Time (hrs)", xlim=(0.5, 4), ylabel="Component", ylim=(0, 1))
+    ax.set(title="Time", xlabel="Time (hrs)", xlim=(0, 4), ylabel="Component", ylim=(0, 1))
 
 
 def plot_tFac_Conc(ax, tFac, respDF):
