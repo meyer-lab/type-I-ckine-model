@@ -138,6 +138,30 @@ def import_pstat_all():
     return respDF
 
 
+def importData(monomeric=False):
+    """Imports pSTAT data and arranges it into quasi-GP compatible format"""
+    yData = pds.read_csv(join(path_here, "ckine/data/WTDimericMutSingleCellData.csv"))
+    monDF = pds.read_csv(join(path_here, "ckine/data/MonomericMutSingleCellData.csv"))
+    yData = yData.append(monDF, ignore_index=True)
+
+    if monomeric:
+        yData = yData.loc[(yData.Bivalent == 0)]
+
+    affDF = pds.read_csv(join(path_here, "ckine/data/WTmutAffData.csv"))
+    exprDF = pds.read_csv(join(path_here, "ckine/data/RecQuantitation.csv"))
+
+    exprDF = exprDF.drop("Moment", axis=1)
+    exprDF = exprDF.T.reset_index()
+    exprDF.columns = np.append(["Cell"], exprDF.iloc[0, 1::].values)
+    exprDF = exprDF.drop(0)
+
+    affDF = affDF.rename(columns={"Mutein": "Ligand"})
+    fullData = pds.merge(yData, affDF, how="inner", on="Ligand")
+    fullData = pds.merge(fullData, exprDF, how="left", on="Cell")
+
+    return fullData
+
+
 def importSigma(cellType):
     """ Loads and formats the receptor covariance matrix for variance propagation """
     sigma = np.zeros((3, 3))
