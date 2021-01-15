@@ -171,7 +171,6 @@ def importSigma(cellType):
 
     momentDF = momentDF.loc[:, ["Cell Type", "Receptor", "Variance"]]
     momentDF = momentDF.groupby(["Cell Type", "Receptor"]).mean().reset_index()
-    print(momentDF)
     momentDF = momentDF.loc[(momentDF["Cell Type"] == cellType)]
 
     for i in range(0, 3):

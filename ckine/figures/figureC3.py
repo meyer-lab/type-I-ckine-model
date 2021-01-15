@@ -32,7 +32,7 @@ def makeFigure():
     Tsample15, _ = importF(path_here + "/data/flow/2019-04-18 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - Treg plate - NEW PBMC LOT/", "F")
     NKsample15, _ = importF(path_here + "/data/flow/2019-03-15 IL-2 and IL-15 treated pSTAT5 assay - Lymphocyte gated - NK plate/", "F")
     Tdate = "4/18/2019"
-    NKdate = "4/18/2019"
+    NKdate = "3/15/2019"
 
     violinDist(Tsample2, Tsample15, ax[0], "treg", TitlesT[0], Tdate, Tcells=True)
     violinDist(Tsample2, Tsample15, ax[1], "nonTreg", TitlesT[1], Tdate, Tcells=True)
@@ -144,6 +144,12 @@ def violinDist(sampleType2, sampleType15, ax, cell_type, title, date, Tcells=Tru
         stat_array2, stat_array15 = dat_array2[[statcol]], dat_array15[[statcol]]
         stat_array2, stat_array15 = stat_array2.to_numpy(), stat_array15.to_numpy()
         stat_array2, stat_array15 = stat_array2.clip(min=1), stat_array15.clip(min=1)  # remove small percentage of negative pstat values
+
+        while np.amax(stat_array2) > 100000:
+            stat_array2 = np.reshape(stat_array2[stat_array2 != np.amax(stat_array2)], (-1, 1))
+        while np.amax(stat_array15) > 100000:
+            stat_array15 = np.reshape(stat_array15[stat_array15 != np.amax(stat_array15)], (-1, 1))
+
         for kk, pSTATArray in enumerate(np.array([stat_array2, stat_array15])):
             if pSTATArray.size == 0:
                 distDF = distDF.append(pds.DataFrame.from_dict({"Dose": dosemat[i], "Ligand": ILs[kk], "pSTAT": [0]}))
@@ -151,7 +157,7 @@ def violinDist(sampleType2, sampleType15, ax, cell_type, title, date, Tcells=Tru
                 distDF = distDF.append(pds.DataFrame.from_dict({"Dose": np.tile(dosemat[i], (len(pSTATArray))), "Ligand": np.tile(ILs[kk], (len(pSTATArray))), "pSTAT": pSTATArray.flatten()}))
 
     sns.violinplot(x="Dose", y="pSTAT", hue="Ligand", data=distDF, split=True, palette={"IL-2": "darkorchid", "IL-15": "goldenrod"}, ax=ax)
-    ax.set(xlabel="Ligand nM", ylabel="Activity", ylim=(0, 60000), title=title)
+    ax.set(xlabel="Ligand nM", ylabel="pSTAT Signal", ylim=(0, 100000), title=title)
     ax.set_xticklabels(ax.get_xticklabels(), rotation=25)
 
     return distDF
