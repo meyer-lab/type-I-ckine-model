@@ -50,7 +50,6 @@ def makeFigure():
                 for _, plate in enumerate(plates):
                     data = df_signal.loc[(df_signal["Cell Type"] == cell) & (df_signal["Receptor"] == receptor) & (df_signal["Date"] == date) & (df_signal["Plate"] == plate)][channels_[j]]
                     data = data[data >= 0]
-                    data = data[data <= 100000]
                     rec_counts = np.zeros(len(data))
                     for k, signal in enumerate(data):
                         A, B, C, D = lsq_params[j]
