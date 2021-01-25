@@ -18,7 +18,7 @@ path_here = os.path.dirname(os.path.dirname(__file__))
 def makeFigure():
     """Get a list of the axis objects and create a figure"""
     # Get list of axis objects
-    ax, f = getSetup((10, 10), (2, 6))
+    ax, f = getSetup((4.5, 4), (3, 1))
 
     #subplotLabel(ax)
 
@@ -51,10 +51,10 @@ def makeFigure():
                 for _, plate in enumerate(plates):
                     data = df_signal.loc[(df_signal["Cell Type"] == cell) & (df_signal["Receptor"] == receptor) & (df_signal["Date"] == date) & (df_signal["Plate"] == plate)][channels_[j]]
                     data = data[data >= 0]
-                    if q < 12:
-                        sns.histplot(data=data, ax=ax[q])
-                        q += 1
-                        print(q)
+                    #if q < 12:
+                    #    sns.histplot(data=data, ax=ax[q])
+                    #    q += 1
+                    #    print(q)
                     rec_counts = np.zeros(len(data))
                     for k, signal in enumerate(data):
                         A, B, C, D = lsq_params[j]
@@ -74,6 +74,7 @@ def makeFigure():
     celltype_pointplot(ax[0], df_stats, "Mean")
     celltype_pointplot(ax[1], df_stats, "Variance")
     celltype_pointplot(ax[2], df_stats, "Skew")
+    ax[0].set(ylim=(2, 4))
 
     return f
 
@@ -99,7 +100,7 @@ def calculate_moments(df, cell_names, receptors):
 def celltype_pointplot(ax, df, moment):
     """ Plots a given distribution moment with SD among replicates for all cell types and receptors. """
     sns.pointplot(x="Cell Type", y=moment, hue="Receptor", data=df, ci='sd', join=False, dodge=True, ax=ax, estimator=sp.stats.gmean)
-    ax.set_ylabel("log(" + moment + ")")
+    ax.set_ylabel(r"$log_{10}$(" + moment + ")")
     ax.set_xticklabels(ax.get_xticklabels(), rotation=25, rotation_mode="anchor", ha="right", position=(0, 0.02), fontsize=7.5)
 
 
