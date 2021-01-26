@@ -5,9 +5,10 @@ This creates Figure 7, tensor factorization of mutant and WT biv and monovalent 
 import os
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from .figureCommon import subplotLabel, getSetup
-from ..imports import import_pstat_all
-from ..tensorFac import makeTensor, factorTensor, R2Xplot, plot_tFac_Ligs, plot_tFac_Time, plot_tFac_Conc, plot_tFac_Cells
+from ..MBmodel import runFullModel
+from sklearn.metrics import r2_score
 
 path_here = os.path.dirname(os.path.dirname(__file__))
 
@@ -15,23 +16,47 @@ path_here = os.path.dirname(os.path.dirname(__file__))
 def makeFigure():
     """Get a list of the axis objects and create a figure"""
 
-    ax, f = getSetup((10, 5), (2, 4))
-    ax[3].axis("off")
-    axLabel = ax.copy()
-    del axLabel[3]
-    subplotLabel(axLabel)
+    ax, f = getSetup((10, 5), (2, 3))
+    subplotLabel(ax)
 
-    # Imports receptor levels from .csv created by figC5
-    respDF = import_pstat_all()
-    respTensor = makeTensor(respDF, Variance=True)
-    tFacAll = factorTensor(respTensor, 3)
-    tFacAll.normalize()
-
-    R2Xplot(ax[0], respTensor, 5)
-    ligHandles, ligLabels = plot_tFac_Ligs(ax[1:3], tFacAll, respDF)
-    ax[3].legend(ligHandles, ligLabels, loc="center", prop={"size": 8}, title="Ligand Legend")
-    plot_tFac_Time(ax[4], tFacAll, respDF)
-    plot_tFac_Conc(ax[5], tFacAll, respDF)
-    plot_tFac_Cells(ax[6:8], tFacAll, respDF)
+    modelDF = runFullModel()
+    print(r2_score(modelDF.Experimental.values, modelDF.Predicted.values))
+    Pred_Exp_plot(ax[0], modelDF)
+    R2_Plot_Cells(ax[1], modelDF)
+    R2_Plot_Ligs(ax[2], modelDF)
 
     return f
+
+
+def Pred_Exp_plot(ax, df):
+    """Plots all experimental vs. Predicted Values"""
+    sns.scatterplot(x="Experimental", y="Predicted", hue="Cell", style="Valency", data=df, ax=ax)
+    ax.set(xlim=(0, 75000), ylim=(0, 75000))
+
+
+def R2_Plot_Cells(ax, df):
+    """Plots all experimental vs. Predicted Values"""
+    accDF = pd.DataFrame(columns={"Cell Type", "Valency", "Accuracy"})
+    for cell in df.Cell.unique():
+        for val in df.Valency.unique():
+            preds = df.loc[(df.Cell == cell) & (df.Valency == val)].Predicted.values
+            exps = df.loc[(df.Cell == cell) & (df.Valency == val)].Experimental.values
+            r2 = r2_score(exps, preds)
+            accDF = accDF.append(pd.DataFrame({"Cell Type": [cell], "Valency": [val], "Accuracy": [r2]}))
+
+    sns.barplot(x="Cell Type", y="Accuracy", hue="Valency", data=accDF, ax=ax)
+    ax.set(ylim=(0, 1))
+
+
+def R2_Plot_Ligs(ax, df):
+    """Plots all experimental vs. Predicted Values"""
+    accDF = pd.DataFrame(columns={"Ligand", "Valency", "Accuracy"})
+    for ligand in df.Ligand.unique():
+        for val in df.loc[df.Ligand == ligand].Valency.unique():
+            preds = df.loc[(df.Ligand == ligand) & (df.Valency == val)].Predicted.values
+            exps = df.loc[(df.Ligand == ligand) & (df.Valency == val)].Experimental.values
+            r2 = r2_score(exps, preds)
+            accDF = accDF.append(pd.DataFrame({"Ligand": [ligand], "Valency": [val], "Accuracy": [r2]}))
+    sns.barplot(x="Ligand", y="Accuracy", hue="Valency", data=accDF, ax=ax)
+    ax.set(ylim=(0, 1))
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
