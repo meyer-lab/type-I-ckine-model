@@ -1,5 +1,5 @@
 """
-This creates Figure 7, tensor factorization of mutant and WT biv and monovalent ligands.
+This creates Figure 8, fitting of multivalent binding model to Gc Data.
 """
 
 import os
@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from .figureCommon import subplotLabel, getSetup
-from ..MBmodel import runFullModel
+from ..MBmodel import runFullModel, cytBindingModel
 from sklearn.metrics import r2_score
 
 path_here = os.path.dirname(os.path.dirname(__file__))
@@ -24,6 +24,9 @@ def makeFigure():
     Pred_Exp_plot(ax[0], modelDF)
     R2_Plot_Cells(ax[1], modelDF)
     R2_Plot_Ligs(ax[2], modelDF)
+    plotDoseResponses(ax[3], modelDF, "WT N-term", val=1, cellType="Treg")
+    plotDoseResponses(ax[4], modelDF, "WT N-term", val=2, cellType="Treg")
+    plotDoseResponses(ax[5], modelDF, "N88D C-term", val=1, cellType="Treg")
 
     return f
 
@@ -60,3 +63,21 @@ def R2_Plot_Ligs(ax, df):
     sns.barplot(x="Ligand", y="Accuracy", hue="Valency", data=accDF, ax=ax)
     ax.set(ylim=(0, 1))
     ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
+
+
+def plotDoseResponses(ax, df, mut, val, cellType):
+    """Plots all experimental vs. Predicted Values"""
+    expData = df.loc[(df.Ligand == mut) & (df.Valency == val) & (df.Cell == cellType)]
+    date = expData.loc[0, :].Date.values[0]
+    expData = expData.loc[(expData.Date == date)]
+    expDataSTAT = expData.Experimental.values
+    doseMax, doseMin = np.log10(np.amax(expData.Dose.values)), np.log10(np.amin(expData.Dose.values))
+    doseVec = np.logspace(doseMin, doseMax, 100)
+
+    preds = cytBindingModel(mut, val, doseVec, cellType, x=False, date=date)
+    ax.scatter(expData.Dose.values, expDataSTAT, label="Experimental")
+    ax.plot(doseVec, preds, label="Predicted")
+    if val == 1:
+        ax.set(title=cellType, xlabel=r"$log_{10}$ Monomeric " + mut + " (nM)", ylabel="pSTAT", xscale="log", xlim=(1e-4, 1e2))
+    if val == 2:
+        ax.set(title=cellType, xlabel=r"$log_{10}$ Dimeric " + mut + " (nM)", ylabel="pSTAT", xscale="log", xlim=(1e-4, 1e2))

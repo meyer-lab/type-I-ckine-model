@@ -154,7 +154,8 @@ def cytBindingModel(mut, val, doseVec, cellType, x=False, date=False):
     Affs = np.power(np.array([Affs["IL2RaKD"].values, Affs["IL2RBGKD"].values]) / 1e9, -1)
     Affs = np.reshape(Affs, (1, -1))
 
-    doseVec = np.array([doseVec])
+    if doseVec.size == 1:
+        doseVec = np.array([doseVec])
     output = np.zeros(doseVec.size)
     recCount = recQuantDF[["Receptor", cellType]]
     recCount = [recCount.loc[(recCount.Receptor == "IL2Ra")][cellType].values, recCount.loc[(recCount.Receptor == "IL2Rb")][cellType].values]
@@ -167,7 +168,7 @@ def cytBindingModel(mut, val, doseVec, cellType, x=False, date=False):
             output[i] = polyfc(dose / 1e9, KxStarP, val, recCount, [1], Affs)[1]
     if date:
         convDict = pd.read_csv(join(path_here, "ckine/data/BindingConvDict.csv"))
-        output *= convDict.loc[(convDict.Date == date) and (convDict.Cell == cellType)].Scale
+        output *= convDict.loc[(convDict.Date == date) & (convDict.Cell == cellType)].Scale.values
 
     return output
 
