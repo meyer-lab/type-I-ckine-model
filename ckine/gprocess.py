@@ -2,7 +2,7 @@ from imports import importData
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import Matern
+from sklearn.gaussian_process.kernels import Matern, RBF
 import time
 import numpy as np
 import pandas as pd
@@ -35,12 +35,46 @@ def getGPData(combCD4=True):
     
     return xData, yData, fullData
 
-def gaussianProcess(xData, yData, fData):
+def gaussianProcess(xData, yData, fData, kernType):
 
-    kernel = 1.0 * Matern(length_scale=1.0, nu=1.5) 
+    if kernType == "matern":
+        kernel = 1.0 * Matern(length_scale=1.0, nu=1.5) 
+    elif kernType == "RBF":
+        kernel = 1.0 * RBF(1.0)
+    elif kernType == "combo":
+        print("hi")
+
     gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=9)
     #use train_test_split to take random selection
     X_train, X_test, y_train, y_test = train_test_split(xData, yData, test_size=0.25, random_state=0)
 
     gp.fit(X_train,y_train)
     return gp
+
+def gaussianTest(xData,yData,testSize, kernType):
+    
+    if kernType == "matern":
+        kernel = 1.0 * Matern(length_scale=1.0, nu=1.5) 
+    elif kernType == "RBF":
+        kernel = 1.0 * RBF(1.0)
+    elif kernType == "combo":
+        kernel = 1.0 * Matern(length_scale=1.0, nu=1.5) * 1.0 * RBF(1.0)
+
+    gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=9)
+    #use train_test_split to take random selection
+    X_train, X_test, y_train, y_test = train_test_split(xData, yData, test_size=testSize, random_state=0)
+    
+    start_time = time.time()
+    gp.fit(X_train,y_train)
+    end_time = (time.time() - start_time)
+    print(str(kernType) + ", testSize = " + str(testSize))
+    print("Time: " + str(end_time))
+
+    print("R^2: " + str(gp.score(X_test, y_test)))
+    return
+
+xData, yData, fullData = getGPData()
+kerns = ["matern","RBF","combo"]
+for k in kerns:
+    for i in np.linspace(0.1, 0.50, 9):
+        gaussianTest(xData,yData,i,k)
