@@ -1,5 +1,5 @@
 ---
-title: "Uncertainty propagation enables flexible modeling of single cell response"
+title: "Signaling specificity of Fc-cytokine fusions is explained by bivalent binding"
 keywords:
   - cytokines
   - IL-2
@@ -11,13 +11,13 @@ authors:
     affiliations:
       - Department of Bioengineering, University of California, Los Angeles
   -
-    name: Zoe S. Kim
-    initials: ZSK
+    name: Peter C. Emmel
+    initials: PCE
     affiliations:
       - Department of Bioengineering, University of California, Los Angeles
   -
-    name: Peter C. Emmel
-    initials: PCE
+    name: Zoe S. Kim
+    initials: ZSK
     affiliations:
       - Department of Bioengineering, University of California, Los Angeles
   -
