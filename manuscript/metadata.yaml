@@ -1,5 +1,5 @@
 ---
-title: "Signaling specificity of Fc-cytokine fusions is explained by bivalent binding"
+title: "Multivalency enhances the specificity of Fc-cytokine fusions"
 keywords:
   - cytokines
   - IL-2
@@ -8,16 +8,19 @@ authors:
   -
     name: Brian Orcutt-Jahns
     initials: BOJ
+    github: borcuttjahns
     affiliations:
       - Department of Bioengineering, University of California, Los Angeles
   -
     name: Peter C. Emmel
     initials: PCE
+    github: petercemmel
     affiliations:
       - Department of Bioengineering, University of California, Los Angeles
   -
     name: Zoe S. Kim
     initials: ZSK
+    github: zoeskim
     affiliations:
       - Department of Bioengineering, University of California, Los Angeles
   -
