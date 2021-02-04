@@ -1,5 +1,5 @@
 """
-This creates Figure 6 for IL2Ra correlation data analysis.
+This creates Figure 6 for IL2Ra correlation data analysis. Useful for grants but will be cleared eventually.
 """
 
 import os
