@@ -18,6 +18,7 @@ from scipy.optimize import minimize
 
 path_here = dirname(dirname(__file__))
 KxStarP = 3e-11
+# KxStarP = 1e-10 1 hour
 
 
 def Req_func(Req, Rtot, L0fA, AKxStar, f):

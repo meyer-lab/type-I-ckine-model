@@ -9,6 +9,7 @@ import seaborn as sns
 from .figureCommon import subplotLabel, getSetup
 from ..MBmodel import runFullModel, cytBindingModel
 from sklearn.metrics import r2_score
+from scipy.optimize import minimize
 
 path_here = os.path.dirname(os.path.dirname(__file__))
 
@@ -19,6 +20,8 @@ def makeFigure():
     ax, f = getSetup((10, 5), (2, 3))
     subplotLabel(ax)
 
+    #minSolved = minimize(runFullModel, -11)
+    # print(minSolved.x)
     modelDF = runFullModel()
     print(r2_score(modelDF.Experimental.values, modelDF.Predicted.values))
     Pred_Exp_plot(ax[0], modelDF)

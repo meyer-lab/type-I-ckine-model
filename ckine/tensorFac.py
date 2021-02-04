@@ -72,27 +72,13 @@ def calcR2X(tensorIn, tensorFac):
 
 
 def plot_tFac_Ligs(ax, tFac, respDF):
-    """Plots tensor factorization of cells"""
+    """Plots tensor factorization of Ligands"""
     ligands = respDF.Ligand.unique()
     mutFacs = tFac[1][0]
-    bivCol = []
-    for i, ligand in enumerate(ligands):
-        if ligand[-5::] == "(Biv)":
-            bivCol.append("Bivalent")
-            ligands[i] = ligand[0:-5]
-        elif ligand[-6::] == "(Mono)":
-            bivCol.append("Monovalent")
-            ligands[i] = ligand[0:-6]
+    tFacDFlig = pd.DataFrame({"Cmpnt. 1": mutFacs[:, 0], "Cmpnt. 2": mutFacs[:, 1], "Cmpnt. 3": mutFacs[:, 2]}, index=ligands)
 
-    mutDF = pd.DataFrame({"Ligand": ligands, "Valency": bivCol, "Component 1": mutFacs[:, 0], "Component 2": mutFacs[:, 1], "Component 3": mutFacs[:, 2]})
-    sns.scatterplot(x="Component 1", y="Component 2", hue=mutDF.Ligand.tolist(), style=mutDF.Valency.tolist(), data=mutDF, ax=ax[0], s=50)
-    sns.scatterplot(x="Component 1", y="Component 3", hue=mutDF.Ligand.tolist(), style=mutDF.Valency.tolist(), data=mutDF, ax=ax[1], legend=False, s=50)
-
-    ax[0].set(title="Ligands", xlim=(0, 1), ylim=(0, 1))
-    ax[1].set(title="Ligands", xlim=(0, 1), ylim=(0, 1))
-    handles, labels = ax[0].get_legend_handles_labels()
-    ax[0].get_legend().remove()
-    return handles, labels
+    ax.tick_params(axis='x', labelrotation=45)
+    sns.heatmap(tFacDFlig, ax=ax, vmin=0., vmax=1.0, cbar_kws={'label': 'Component Value'})
 
 
 def plot_tFac_Time(ax, tFac, respDF):
@@ -125,13 +111,7 @@ def plot_tFac_Cells(ax, tFac, respDF):
     """Plots tensor factorization of cells"""
     cells = respDF.Cell.unique()
     cellFacs = tFac[1][3]
+    tFacDFcell = pd.DataFrame({"Cmpnt. 1": cellFacs[:, 0], "Cmpnt. 2": cellFacs[:, 1], "Cmpnt. 3": cellFacs[:, 2]}, index=cells)
+    ax.tick_params(axis='x', labelrotation=45)
 
-    markersCells = ["P", "*", "D", "s"]
-    colors = cm.rainbow(np.linspace(0, 1, len(cells)))
-    for i, cell in enumerate(cells):
-        ax[0].scatter(cellFacs[i, 0], cellFacs[i, 1], marker=markersCells[i], color=colors[i], label=cell)
-        ax[1].scatter(cellFacs[i, 0], cellFacs[i, 2], marker=markersCells[i], color=colors[i], label=cell)
-
-    ax[0].legend(loc='best', fontsize=10)
-    ax[0].set(title="Cells", xlabel="Component 1", xlim=(0, 1), ylabel="Component 2", ylim=(0, 1))
-    ax[1].set(title="Cells", xlabel="Component 1", xlim=(0, 1), ylabel="Component 3", ylim=(0, 1))
+    sns.heatmap(tFacDFcell, ax=ax, vmin=0., vmax=1.0, cbar_kws={'label': 'Component Value'})
