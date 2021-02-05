@@ -1,3 +1,5 @@
+import os
+from os.path import join
 from imports import importData
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.model_selection import train_test_split
@@ -6,6 +8,8 @@ from sklearn.gaussian_process.kernels import Matern, RBF
 import time
 import numpy as np
 import pandas as pd
+
+path_here = os.path.dirname(os.path.dirname(__file__))
 
 def getGPData(combCD4=True):
     #import data
@@ -37,12 +41,16 @@ def getGPData(combCD4=True):
 
 def gaussianProcess(xData, yData, fData, kernType):
 
+    kern_scale = np.ones(len(xData.columns))
+
     if kernType == "matern":
-        kernel = 1.0 * Matern(length_scale=1.0, nu=1.5) 
+        kernel = 1.0 * Matern(length_scale=kern_scale, nu=1.5) 
     elif kernType == "RBF":
-        kernel = 1.0 * RBF(1.0)
-    elif kernType == "combo":
-        print("hi")
+        kernel = 1.0 * RBF(kern_scale)
+    elif kernType == "combo*":
+        kernel = 1.0 * Matern(length_scale=kern_scale, nu=1.5) * 1.0 * RBF(kern_scale)
+    elif kernType == "combo+":
+        kernel = 1.0 * Matern(length_scale=kern_scale, nu=1.5) + 1.0 * RBF(kern_scale)
 
     gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=9)
     #use train_test_split to take random selection
@@ -53,12 +61,16 @@ def gaussianProcess(xData, yData, fData, kernType):
 
 def gaussianTest(xData,yData,testSize, kernType):
     
+    kern_scale = np.ones(len(xData.columns))
+
     if kernType == "matern":
-        kernel = 1.0 * Matern(length_scale=1.0, nu=1.5) 
+        kernel = 1.0 * Matern(length_scale=kern_scale, nu=1.5) 
     elif kernType == "RBF":
-        kernel = 1.0 * RBF(1.0)
-    elif kernType == "combo":
-        kernel = 1.0 * Matern(length_scale=1.0, nu=1.5) * 1.0 * RBF(1.0)
+        kernel = 1.0 * RBF(kern_scale)
+    elif kernType == "combo*":
+        kernel = 1.0 * Matern(length_scale=kern_scale, nu=1.5) * 1.0 * RBF(kern_scale)
+    elif kernType == "combo+":
+        kernel = 1.0 * Matern(length_scale=kern_scale, nu=1.5) + 1.0 * RBF(kern_scale)
 
     gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=9)
     #use train_test_split to take random selection
@@ -67,14 +79,24 @@ def gaussianTest(xData,yData,testSize, kernType):
     start_time = time.time()
     gp.fit(X_train,y_train)
     end_time = (time.time() - start_time)
-    print(str(kernType) + ", testSize = " + str(testSize))
-    print("Time: " + str(end_time))
+    Rsquare = gp.score(X_test, y_test)
+    #print(str(kernType) + ", testSize = " + str(testSize))
+    #print("Time: " + str(end_time))
+    #print("R^2: " + str(Rsquare))
 
-    print("R^2: " + str(gp.score(X_test, y_test)))
-    return
+    
+    return Rsquare, end_time
 
 xData, yData, fullData = getGPData()
-kerns = ["matern","RBF","combo"]
+kerns = ["matern","RBF","combo*","combo+"]
+FitData = pd.DataFrame(columns=['Kernel','TestSize','R^2','Time'])
 for k in kerns:
-    for i in np.linspace(0.1, 0.50, 9):
-        gaussianTest(xData,yData,i,k)
+    for i in np.linspace(0.1,0.5,9)
+        Rsquare, end_time = gaussianTest(xData,yData,i,k)
+        data = {'Kernel':[k],'TestSize':[i],'R^2':[Rsquare],'Time':[end_time]}
+        df=pd.DataFrame(data)
+        FitData = FitData.append(df, ignore_index=True)
+
+print(FitData)
+print(join(path_here,'/ckine/FitTestData.csv'))
+FitData.to_csv(join(path_here,'/ckine/FitTestData.csv'))
