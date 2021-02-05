@@ -121,6 +121,7 @@ receptors["I"] = ["CD127", "CD127", "CD127", "CD127", "CD127"]
 
 
 def importMoments():
+    """Gets pSTAT moment Data"""
     path = os.path.dirname(os.path.dirname(__file__))
     momentDF = pds.read_csv(join(path, "ckine/data/pSTATMomentData.csv"), encoding="latin1")
     return momentDF
@@ -184,3 +185,10 @@ def importSigma(cellType):
         sigma[0, i] = sigma[i, 0] = covDF["Covariance"].values[i - 1]
 
     return sigma
+
+
+def getBindDict():
+    """Gets binding to pSTAT fluorescent conversion dictionary"""
+    path = os.path.dirname(os.path.dirname(__file__))
+    bindingDF = pds.read_csv(join(path, "ckine/data/BindingConvDict.csv"), encoding="latin1")
+    return bindingDF

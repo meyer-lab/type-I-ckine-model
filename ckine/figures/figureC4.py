@@ -6,10 +6,11 @@ import os
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from .figureCommon import subplotLabel, getSetup
-from ..MBmodel import runFullModel, cytBindingModel
 from sklearn.metrics import r2_score
 from scipy.optimize import minimize
+from .figureCommon import subplotLabel, getSetup
+from ..MBmodel import runFullModel, cytBindingModel, getKxStar
+from ..imports import getBindDict
 
 path_here = os.path.dirname(os.path.dirname(__file__))
 
@@ -25,18 +26,20 @@ def makeFigure():
     modelDF = runFullModel()
     print(r2_score(modelDF.Experimental.values, modelDF.Predicted.values))
     Pred_Exp_plot(ax[0], modelDF)
-    R2_Plot_Cells(ax[1], modelDF)
-    R2_Plot_Ligs(ax[2], modelDF)
-    plotDoseResponses(ax[3], modelDF, "WT N-term", val=1, cellType="Treg")
-    plotDoseResponses(ax[4], modelDF, "WT N-term", val=2, cellType="Treg")
-    plotDoseResponses(ax[5], modelDF, "N88D C-term", val=1, cellType="Treg")
+    MonVsBivalent(ax[1], modelDF)
+
+    R2_Plot_Cells(ax[2], modelDF)
+    R2_Plot_Ligs(ax[3], modelDF)
+    plotDoseResponses(ax[4], modelDF, "WT N-term", val=1, cellType="Treg")
+    plotDoseResponses(ax[5], modelDF, "WT N-term", val=2, cellType="Treg")
+    #plotDoseResponses(ax[5], modelDF, "N88D C-term", val=1, cellType="Treg")
 
     return f
 
 
 def Pred_Exp_plot(ax, df):
     """Plots all experimental vs. Predicted Values"""
-    sns.scatterplot(x="Experimental", y="Predicted", hue="Cell", style="Valency", data=df, ax=ax)
+    sns.scatterplot(x="Experimental", y="Predicted", hue="Cell", style="Valency", data=df, ax=ax, alpha=0.35)
     ax.set(xlim=(0, 75000), ylim=(0, 75000))
 
 
@@ -84,3 +87,45 @@ def plotDoseResponses(ax, df, mut, val, cellType):
         ax.set(title=cellType, xlabel=r"$log_{10}$ Monomeric " + mut + " (nM)", ylabel="pSTAT", xscale="log", xlim=(1e-4, 1e2))
     if val == 2:
         ax.set(title=cellType, xlabel=r"$log_{10}$ Dimeric " + mut + " (nM)", ylabel="pSTAT", xscale="log", xlim=(1e-4, 1e2))
+
+
+def MonVsBivalent(ax, df):
+    """Runs model for all data points and outputs date conversion dict for binding to pSTAT. Can be used to fit Kx"""
+    df = df.loc[(df.Valency == 2)]
+    dates = df.Date.unique()
+    monPredDF = pd.DataFrame(columns={"MonPredict", "Date"})
+    for date in dates:
+        dfDate = df.loc[(df.Date == date)]
+        ligands = dfDate.Ligand.unique()
+        concs = dfDate.Dose.unique()
+        cellTypes = dfDate.Cell.unique()
+
+        for lig in ligands:
+            for conc in concs:
+                for cell in cellTypes:
+                    predVal = cytBindingModel(lig, 1, conc * 2, cell)
+                    monPredDF = monPredDF.append(pd.DataFrame({"MonPredict": predVal, "Date": date}))
+
+    for date in dates:
+        for cell in cellTypes:
+            expVec = df.loc[(df.Date == date) & (df.Cell == cell)].Experimental.values
+            predVec = monPredDF.loc[(df.Date == date) & (df.Cell == cell)].MonPredict.values
+            slope = np.linalg.lstsq(np.reshape(predVec, (-1, 1)), np.reshape(expVec, (-1, 1)), rcond=None)[0][0]
+            monPredDF.loc[(df.Date == date) & (df.Cell == cell), "MonPredict"] = predVec * slope
+
+    df = pd.concat([df, monPredDF], axis=1)
+
+    accDF = pd.DataFrame(columns={"Ligand", "Prediction Valency", "Accuracy"})
+    for ligand in df.Ligand.unique():
+        BivPreds = df.loc[(df.Ligand == ligand)].Predicted.values
+        MonPreds = df.loc[(df.Ligand == ligand)].MonPredict.values
+        exps = df.loc[(df.Ligand == ligand)].Experimental.values
+        r2Biv = r2_score(exps, BivPreds)
+        r2Mon = r2_score(exps, MonPreds)
+        accDF = accDF.append(pd.DataFrame({"Ligand": [ligand], "Prediction Valency": [1], "Accuracy": [r2Mon]}))
+        accDF = accDF.append(pd.DataFrame({"Ligand": [ligand], "Prediction Valency": [2], "Accuracy": [r2Biv]}))
+    sns.barplot(x="Ligand", y="Accuracy", hue="Prediction Valency", data=accDF, ax=ax)
+    ax.set(ylim=(0, 1))
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
+
+    return df

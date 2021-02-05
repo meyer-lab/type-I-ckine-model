@@ -17,8 +17,11 @@ from .imports import import_pstat_all
 from scipy.optimize import minimize
 
 path_here = dirname(dirname(__file__))
-KxStarP = 3e-11
-# KxStarP = 1e-10 1 hour
+KxStarP = 5e-11
+
+
+def getKxStar():
+    return KxStarP
 
 
 def Req_func(Req, Rtot, L0fA, AKxStar, f):
@@ -180,7 +183,7 @@ def runFullModel(x=False):
     """Runs model for all data points and outputs date conversion dict for binding to pSTAT. Can be used to fit Kx"""
     statDF = import_pstat_all()
     statDF = statDF.loc[(statDF.Ligand != "H16L N-term (Mono)") & (statDF.Ligand != "IL15 (Mono)")]
-    statDF = statDF.loc[(statDF.Time == 0.5)]
+    statDF = statDF.loc[(statDF.Time != 2.0) & (statDF.Time != 4.0)]
     dateConvDF = pd.DataFrame(columns={"Date", "Scale", "Cell"})
     masterSTAT = pd.DataFrame(columns={"Ligand", "Date", "Cell", "Dose", "Valency", "Experimental", "Predicted"})
     dates = statDF.Date.unique()
