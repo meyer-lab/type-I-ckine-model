@@ -80,23 +80,20 @@ def gaussianTest(xData,yData,testSize, kernType):
     gp.fit(X_train,y_train)
     end_time = (time.time() - start_time)
     Rsquare = gp.score(X_test, y_test)
-    #print(str(kernType) + ", testSize = " + str(testSize))
-    #print("Time: " + str(end_time))
-    #print("R^2: " + str(Rsquare))
 
     
     return Rsquare, end_time
 
 xData, yData, fullData = getGPData()
-kerns = ["matern","RBF","combo*","combo+"]
+kerns = ["mater","RBF","combo*","combo+"] 
 FitData = pd.DataFrame(columns=['Kernel','TestSize','R^2','Time'])
 for k in kerns:
-    for i in np.linspace(0.1,0.5,9)
+    for i in np.linspace(0.1,0.5,9): 
         Rsquare, end_time = gaussianTest(xData,yData,i,k)
         data = {'Kernel':[k],'TestSize':[i],'R^2':[Rsquare],'Time':[end_time]}
         df=pd.DataFrame(data)
         FitData = FitData.append(df, ignore_index=True)
 
 print(FitData)
-print(join(path_here,'/ckine/FitTestData.csv'))
-FitData.to_csv(join(path_here,'/ckine/FitTestData.csv'))
+path = path_here + "/ckine/FitTestData.csv"
+FitData.to_csv(str(path), index=False, header=True)
