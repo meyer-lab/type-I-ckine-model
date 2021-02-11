@@ -10,8 +10,10 @@ import svgutils.transform as st
 from matplotlib import gridspec, pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
+from scipy.optimize import least_squares
 from ..imports import import_pstat
 from ..flow import exp_dec, bead_regression
+from ..MBmodel import cytBindingModel
 
 
 matplotlib.rcParams["legend.labelspacing"] = 0.2
@@ -206,3 +208,38 @@ def plot_regression(ax, sample, channels, receptors, recQuant, first=0, skip=Fal
     ax.plot(xs, exp_dec(xs, lsq))
     ax.set_xlabel("Bead Capacity")
     ax.set_ylabel("Average Signal (" + str(receptors[4 + first]) + ")")
+
+
+def plotDoseResponses(ax, df, mut, val, cellType):
+    """Plots all experimental vs. Predicted Values"""
+    expData = df.loc[(df.Ligand == mut) & (df.Valency == val) & (df.Cell == cellType)]
+    date = expData.loc[0, :].Date.values[0]
+    expData = expData.loc[(expData.Date == date)]
+    expDataSTAT = expData.Experimental.values
+    doseMax, doseMin = np.log10(np.amax(expData.Dose.values)), np.log10(np.amin(expData.Dose.values))
+    doseVec = np.logspace(doseMin, doseMax, 100)
+
+    preds = cytBindingModel(mut, val, doseVec, cellType, x=False, date=date)
+    ax.scatter(expData.Dose.values, expDataSTAT, label="Experimental")
+    ax.plot(doseVec, preds, label="Predicted")
+    if val == 1:
+        ax.set(title=cellType, xlabel=r"$log_{10}$ Monomeric " + mut + " (nM)", ylabel="pSTAT", xscale="log", xlim=(1e-4, 1e2))
+    if val == 2:
+        ax.set(title=cellType, xlabel=r"$log_{10}$ Dimeric " + mut + " (nM)", ylabel="pSTAT", xscale="log", xlim=(1e-4, 1e2))
+
+
+def nllsq_EC50(x0, xdata, ydata):
+    """ Performs nonlinear least squares on activity measurements to determine parameters of Hill equation and outputs EC50. """
+    lsq_res = least_squares(residuals, x0, args=(xdata, ydata), bounds=([0.0, 0.0, 0.0], [10, 10.0, 10 ** 5.0]), jac="3-point")
+    return lsq_res.x[0]
+
+
+def hill_equation(x, x0, solution=0):
+    """ Calculates EC50 from Hill Equation. """
+    xk = np.power(x / x0[0], x0[1])
+    return (x0[2] * xk / (1.0 + xk)) - solution
+
+
+def residuals(x0, x, y):
+    """ Residual function for Hill Equation. """
+    return hill_equation(x, x0) - y

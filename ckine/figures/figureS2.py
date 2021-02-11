@@ -3,8 +3,7 @@ This creates Figure 8, dose response of all IL-2 cytokines using binding model.
 """
 
 import numpy as np
-from .figureCommon import subplotLabel, getSetup
-from .figureC8 import plotDoseResponses
+from .figureCommon import subplotLabel, getSetup, plotDoseResponses
 from ..MBmodel import runFullModel
 
 
