@@ -17,7 +17,7 @@ from .imports import import_pstat_all
 from scipy.optimize import minimize
 
 path_here = dirname(dirname(__file__))
-KxStarP = 5e-11
+KxStarP = 1e-12
 
 
 def getKxStar():
@@ -169,9 +169,9 @@ def cytBindingModel(mut, val, doseVec, cellType, x=False, date=False):
     for i, dose in enumerate(doseVec):
         if x:
             print(x)
-            output[i] = polyc(dose / 1e9, np.power(10, x[0]), recCount, [[val, 0]], [1.0], Affs)[1][0][1]
+            output[i] = polyc(dose / 1e9, np.power(10, x[0]), recCount, [[val * 2, 0]], [1.0], Affs)[1][0][1]
         else:
-            output[i] = polyc((dose) / 1e9, KxStarP, recCount, [[val, 0]], [1.0], Affs)[1][0][1]   # IL2RB binding only
+            output[i] = polyc((dose) / 1e9, KxStarP, recCount, [[val * 2, 0]], [1.0], Affs)[1][0][1]   # IL2RB binding only
     if date:
         convDict = pd.read_csv(join(path_here, "ckine/data/BindingConvDict.csv"))
         output *= convDict.loc[(convDict.Date == date) & (convDict.Cell == cellType)].Scale.values
