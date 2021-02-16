@@ -19,24 +19,26 @@ path_here = os.path.dirname(os.path.dirname(__file__))
 def makeFigure():
     """Get a list of the axis objects and create a figure"""
 
-    ax, f = getSetup((10, 5), (2, 4), multz={5: 1})
+    ax, f = getSetup((10, 5), (2, 4), multz={4: 1})
     subplotLabel(ax)
-    ax[6].axis("off")
+    ax[5].axis("off")
 
-    # minSolved = minimize(runFullModel, -11)
+    # minSolved = minimize(runFullModel, x0=-11, args=[0.5, False])
     # print(minSolved.x)
-    modelDF = runFullModel()
+    modelDF = runFullModel(time=[0.5])
     print(r2_score(modelDF.Experimental.values, modelDF.Predicted.values))
     Pred_Exp_plot(ax[0], modelDF)
+
     R2_Plot_Cells(ax[1], modelDF)
     R2_Plot_Ligs(ax[2], modelDF)
     MonVsBivalent(ax[3], modelDF, ligs=True)
-    MonVsBivalent(ax[4], modelDF, ligs=False)
-    EC50comp(ax[5], modelDF, time=1.0)
-    legend = ax[5].get_legend()
+
+    EC50comp(ax[4], modelDF, time=0.5)
+    legend = ax[4].get_legend()
     labels = (x.get_text() for x in legend.get_texts())
-    ax[6].legend(legend.legendHandles, labels, loc="upper left", prop={"size": 8})  # use this to place universal legend later
-    ax[5].get_legend().remove()
+    ax[5].legend(legend.legendHandles, labels, loc="upper left", prop={"size": 8})  # use this to place universal legend later
+    ax[4].get_legend().remove()
+    timePlot(ax[6])
 
     return f
 
@@ -170,5 +172,21 @@ def EC50comp(ax, dfAll, time):
                     EC50df = EC50df.append(pd.DataFrame({"Cell Type": [cell], "Ligand": [ligand + " (Biv)"], "EC50": [EC50pred], "Exp/Pred": ["Predicted"]}))
 
     sns.scatterplot(x="Ligand", y="EC50", hue="Cell Type", style="Exp/Pred", data=EC50df, ax=ax)
-    ax.set(ylabel=r"log$_{10}$EC50 (nM)")
+    ax.set(ylabel=r"log$_{10}$EC50 (nM)", ylim=(-2, 6))
     ax.set_xticklabels(EC50df.Ligand.unique(), rotation=45)
+
+
+def timePlot(ax):
+    """Plots all experimental vs. Predicted Values"""
+    times = [[0.5], [1.], [2.], [4.]]
+    accDF = pd.DataFrame(columns={"Time", "Valency", "Accuracy"})
+    for time in times:
+        df = runFullModel(time=time, saveDict=False)
+        for val in df.Valency.unique():
+            preds = df.loc[(df.Time == time[0]) & (df.Valency == val)].Predicted.values
+            exps = df.loc[(df.Time == time[0]) & (df.Valency == val)].Experimental.values
+            r2 = r2_score(exps, preds)
+            accDF = accDF.append(pd.DataFrame({"Time": time, "Valency": [val], "Accuracy": [r2]}))
+    sns.barplot(x="Time", y="Accuracy", hue="Valency", data=accDF, ax=ax)
+    ax.set(ylim=(0, 1))
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=45)

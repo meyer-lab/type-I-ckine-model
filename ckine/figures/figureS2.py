@@ -9,7 +9,7 @@ from ..MBmodel import runFullModel
 
 def makeFigure():
     """Get a list of the axis objects and create a figure"""
-    modelDF = runFullModel()
+    modelDF = runFullModel(time=[0.5], saveDict=False)
 
     ligands = modelDF.Ligand.unique()
     cells = modelDF.Cell.unique()
