@@ -20,12 +20,14 @@ def makeFigure():
     """Get a list of the axis objects and create a figure"""
 
     ax, f = getSetup((10, 5), (2, 4), multz={4: 1})
-    subplotLabel(ax)
+    axlabel = copy(ax)
+    del axlabel[5]
+    subplotLabel(axlabel)
     ax[5].axis("off")
 
     # minSolved = minimize(runFullModel, x0=-11, args=[0.5, False])
     # print(minSolved.x)
-    modelDF = runFullModel(time=[0.5])
+    modelDF = runFullModel(time=[0.5, 1.0])
     print(r2_score(modelDF.Experimental.values, modelDF.Predicted.values))
     Pred_Exp_plot(ax[0], modelDF)
 
@@ -151,18 +153,15 @@ def EC50comp(ax, dfAll, time):
             for cell in Cells:
                 #dates = df.loc[(df.Ligand == ligand) & (df.Cell == cell) & (df.Valency == valency)].Date.values
                 dosesExp = df.loc[(df.Ligand == ligand) & (df.Cell == cell) & (df.Valency == valency)].Dose.values
-                #doseMax, doseMin = np.log10(np.amax(dosesExp)), np.log10(np.amin(dosesExp))
-                #dosesPred = np.log10(np.logspace(doseMin, doseMax, 100)) + 4
+                doseMax, doseMin = np.log10(np.amax(dosesExp)) + 4, np.log10(np.amin(dosesExp))
+                dosesPredMB = np.logspace(doseMin, doseMax, 40)
+                dosesPred = np.log10(dosesPredMB) + 4
                 dosesExp = np.log10(dosesExp) + 4
 
                 expVals = df.loc[(df.Ligand == ligand) & (df.Cell == cell) & (df.Valency == valency)].Experimental.values
-                #predVals = np.array([])
-                # for date in dates:
-                #predVals = np.append(predVals, cytBindingModel(ligand, valency, dosesPred, cell, date=date))
-                #dosesPred = np.tile(dosesPred, dates.size)
-                predVals = df.loc[(df.Ligand == ligand) & (df.Cell == cell) & (df.Valency == valency)].Predicted.values
+                predVals = cytBindingModel(ligand, valency, dosesPredMB, cell)
                 EC50exp = nllsq_EC50(x0exp, dosesExp, expVals) - 4
-                EC50pred = nllsq_EC50(x0pred, dosesExp, predVals) - 4
+                EC50pred = nllsq_EC50(x0pred, dosesPred, predVals) - 4
 
                 if valency == 1:
                     EC50df = EC50df.append(pd.DataFrame({"Cell Type": [cell], "Ligand": [ligand + " (Mono)"], "EC50": [EC50exp], "Exp/Pred": ["Experimental"]}))
