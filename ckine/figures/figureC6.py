@@ -19,8 +19,7 @@ def makeFigure():
     # Get list of axis objects
     ax, f = getSetup((16, 8), (3, 6))
     subplotLabel(ax)
-
-    optimizeDesign(ax[0:2], ["Treg"], ["CD8"])
+    optimizeDesign(ax[0:2], ["Treg"], ["Thelper", "NK", "CD8"])
 
     return f
 
@@ -40,8 +39,7 @@ def cytBindingModelOpt(x, val, cellType):
     recCount = recQuantDF[["Receptor", cellType]]
     recCount = [recCount.loc[(recCount.Receptor == "IL2Ra")][cellType].values, recCount.loc[(recCount.Receptor == "IL2Rb")][cellType].values]
     recCount = np.ravel(np.power(10, recCount))
-
-    output = polyc(1e-9, Kx, recCount, [[val, val]], [1.0], affs)[1][0][1]  # IL2RB binding only
+    output = polyc(1e-9 / val, Kx, recCount, [[val, val]], [1.0], affs)[1][0][1]  # IL2RB binding only
 
     return output
 
@@ -61,7 +59,7 @@ def optimizeDesign(ax, targCell, offTcells):
     """ A more general purpose optimizer """
     X0 = [8, 8, -12]
     vals = np.logspace(0, 4, num=5, base=2)
-    optDF = pd.DataFrame(columns={"Valency", "Selectivity", "IL2Ra KD", "IL2RBG KD"})
+    optDF = pd.DataFrame(columns={"Valency", "Selectivity", "IL2Ra", "IL2RBG"})
 
     for val in vals:
         optimized = minimize(minSelecFunc, X0, bounds=optBnds, args=(val, targCell, offTcells), jac="3-point")
@@ -69,12 +67,12 @@ def optimizeDesign(ax, targCell, offTcells):
         print(optimized.fun)
         IL2RaKD = 1e9 / np.power(10, optimized.x[0])
         IL2RBGKD = 1e9 / np.power(10, optimized.x[1])
-        optDF = optDF.append(pd.DataFrame({"Valency": [val], "Selectivity": [len(offTcells) / optimized.fun], "IL2Ra KD": IL2RaKD, "IL2RBG KD": IL2RBGKD}))
+        optDF = optDF.append(pd.DataFrame({"Valency": [val], "Selectivity": [len(offTcells) / optimized.fun], "IL2Ra": IL2RaKD, "IL2RBG": IL2RBGKD}))
 
     sns.barplot(x="Valency", y="Selectivity", data=optDF, ax=ax[0])
 
-    affDF = pd.melt(optDF, id_vars=['Valency'], value_vars=['IL2Ra KD', 'IL2RBG KD'])
+    affDF = pd.melt(optDF, id_vars=['Valency'], value_vars=['IL2Ra', 'IL2RBG'])
     sns.barplot(x="Valency", y="value", hue="variable", data=affDF, ax=ax[1])
-    ax[1].set(yscale="log")
+    ax[1].set(yscale="log", ylabel=r"$K_D$ (nM)")
 
     return optimized
