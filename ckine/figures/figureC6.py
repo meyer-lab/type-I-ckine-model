@@ -83,19 +83,19 @@ def optimizeDesign(ax, targCell, offTcells, IL7=False):
             optDF = optDF.append(pd.DataFrame({"Valency": [val], "Selectivity": [len(offTcells) / optimized.fun], "IL2Ra": IL2RaKD, "IL2RBG": IL2RBGKD}))
 
     if IL7:
-        sns.barplot(x="Valency", y="Selectivity", data=optDF, ax=ax[0])
+        sns.barplot(x="Valency", y="Selectivity", data=optDF, ax=ax[0], palette="husl")
         ax[0].set(title=targCell[0] + " Selectivity with IL-7 mutein")
 
-        sns.barplot(x="Valency", y="IL7Ra", data=optDF, ax=ax[1])
-        ax[1].set(yscale="log", ylabel=r"$K_D$ (nM)")
+        sns.barplot(x="Valency", y="IL7Ra", data=optDF, ax=ax[1], palette="crest")
+        ax[1].set(yscale="log", ylabel=r"IL7·7Rα $K_D$ (nM)")
 
     else:
-        sns.barplot(x="Valency", y="Selectivity", data=optDF, ax=ax[0])
+        sns.barplot(x="Valency", y="Selectivity", data=optDF, ax=ax[0], palette="husl")
         ax[0].set(title=targCell[0] + " Selectivity with IL-2 mutein")
 
         affDF = pd.melt(optDF, id_vars=['Valency'], value_vars=['IL2Ra', 'IL2RBG'])
         affDF = affDF.rename(columns={"variable": "Receptor"})
         sns.barplot(x="Valency", y="value", hue="Receptor", data=affDF, ax=ax[1])
-        ax[1].set(yscale="log", ylabel=r"$K_D$ (nM)")
+        ax[1].set(yscale="log", ylabel=r"IL2· $K_D$ (nM)")
 
     return optimized
