@@ -38,7 +38,7 @@ def makeFigure():
     EC50comp(ax[4], modelDF, time=0.5)
     legend = ax[4].get_legend()
     labels = (x.get_text() for x in legend.get_texts())
-    ax[5].legend(legend.legendHandles, labels, loc="upper left", prop={"size": 8})  # use this to place universal legend later
+    ax[5].legend(legend.legendHandles, labels, loc="upper left", prop={"size": 10})  # use this to place universal legend later
     ax[4].get_legend().remove()
     timePlot(ax[6])
 
@@ -170,6 +170,7 @@ def EC50comp(ax, dfAll, time):
                     EC50df = EC50df.append(pd.DataFrame({"Cell Type": [cell], "Ligand": [ligand + " (Biv)"], "EC50": [EC50exp], "Exp/Pred": ["Experimental"]}))
                     EC50df = EC50df.append(pd.DataFrame({"Cell Type": [cell], "Ligand": [ligand + " (Biv)"], "EC50": [EC50pred], "Exp/Pred": ["Predicted"]}))
 
+    EC50df = EC50df.loc[(EC50df["Cell Type"].isin(["Treg", "Thelper"]))]
     sns.scatterplot(x="Ligand", y="EC50", hue="Cell Type", style="Exp/Pred", data=EC50df, ax=ax)
     ax.set(ylabel=r"log$_{10}$EC50 (nM)", ylim=(-2, 6))
     ax.set_xticklabels(EC50df.Ligand.unique(), rotation=45)
