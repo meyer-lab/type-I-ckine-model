@@ -1,11 +1,13 @@
 import os
 from os.path import dirname, join
 from pathlib import Path
+import seaborn as sns
+import scipy as sp
 import numpy as np
 import pandas as pd
 from .figureCommon import subplotLabel, getSetup
-from .figureC6 import getReceptors
 from ..imports import channels
+from ..flow import bead_regression
 from ..FCimports import combineWells, compMatrix, applyMatrix, import_gates, apply_gates, importF
 from FlowCytometryTools import FCMeasurement, ThresholdGate, PolyGate, QuadGate
 from matplotlib import pyplot as plt
@@ -17,7 +19,7 @@ path_here = os.path.dirname(os.path.dirname(__file__))
 def makeFigure():
     """Get a list of the axis objects and create a figure"""
 
-    ax, f = getSetup((10, 8), (3, 4))
+    ax, f = getSetup((10, 8), (3, 4), multz={8: 1})
     subplotLabel(ax)
 
     Tcell_pathname = path_here + "/data/flow/2019-11-08 monomer IL-2 Fc signaling/CD4 T cells - IL2-060 mono, IL2-060 dimeric"
@@ -108,37 +110,36 @@ def makeFigure():
     plt.xlabel("CD3")
     plt.ylabel("CD8")
 
-    print("check")
-
     for i, axs in enumerate(ax):
         if i == 0:
             print(" ")
             # weird error replace later, axs is not correct object type
             # axs.set(xlabel='CD4',ylabel='Events')
         elif i == 1:
-            axs.set_title('CD4+ Cells')
+            axs.set_title('T Cell Gating')
             axs.set(xlabel='CD25', ylabel='FOXP3')
         elif i == 2:
-            axs.set_title('Singlet Lymphocytes')
+            axs.set_title('CD8+ Cells Gating')
             axs.set(xlabel='CD3', ylabel='CD8')
         elif i == 3:
-            axs.set_title('Singlet Lymphocytes')
+            axs.set_title('NK Cells Gating')
             axs.set(xlabel='CD3', ylabel='CD56')
         elif i == 4:
-            axs.set_title('Singlet Lymphocytes')
+            axs.set_title('CD3+CD4+ Gating')
             axs.set(xlabel='CD3', ylabel='CD4')
         elif i == 5:
-            axs.set_title('CD3+CD4+ cells')
+            axs.set_title('T reg and T Helper Gating')
             axs.set(xlabel='CD25', ylabel='CD127')
         elif i == 6:
-            axs.set_title('Singlet Lymphocytes')
-            axs.set(xlabel='CD23', ylabel='CD56')
+            axs.set_title('NK and NKT Gating')
+            axs.set(xlabel='CD3', ylabel='CD56')
         elif i == 7:
-            axs.set_title('Singlet Lymphocytes')
+            axs.set_title('CD3+CD8+ Gating')
             axs.set(xlabel='CD3', ylabel='CD8')
-        # axs.grid()
+        if i != 0:
+            axs.grid()
 
-    # receptorPlot()
+    receptorPlot(ax[8], ax[9], ax[10])
 
     return f
 
@@ -168,15 +169,130 @@ def importF2(pathname, WellRow):
     return sample, file
 
 
-def receptorPlot():
+def receptorPlot(ax1, ax2, ax3):
 
-    receptor_levels = getReceptors()
-    cell_types = ['T-reg', 'T-helper', 'NK', 'CD8+']
+    # import bead data and run regression to get equations
+    lsq_cd25, lsq_cd122, lsq_cd132, lsq_cd127 = run_regression()
 
-    alphaLevels = receptor_levels.loc[(receptor_levels['Cell Type'] == cell_type) & (receptor_levels['Receptor'] == 'CD25')]
-    betaLevels = receptor_levels.loc[(receptor_levels['Cell Type'] == cell_type) & (receptor_levels['Receptor'] == 'CD122')]
-    gammaLevels = receptor_levels.loc[(receptor_levels['Cell Type'] == cell_type) & (receptor_levels['Receptor'] == 'CD132')]
+    # create dataframe with gated samples (all replicates)
+    df_gates = import_gates()
+    df_signal = apply_gates("4-23", "1", df_gates)
+    df_signal = df_signal.append(apply_gates("4-23", "2", df_gates))
+    df_signal = df_signal.append(apply_gates("4-26", "1", df_gates))
+    df_signal = df_signal.append(apply_gates("4-26", "2", df_gates))
+    df_signal = df_signal.append(apply_gates("5-16", "1", df_gates))
+    df_signal = df_signal.append(apply_gates("5-16", "2", df_gates))
 
-    print("test")
+    # make new dataframe for receptor counts
+    df_rec = pd.DataFrame(columns=["Cell Type", "Receptor", "Count", "Date", "Plate"])
+    cell_names = ["T-reg", "T-helper", "NK", "CD8+"]
+    receptors_ = ["CD25", "CD122", "CD132", "CD127"]
+    channels_ = ["VL1-H", "BL5-H", "RL1-H", "BL1-H"]
+    lsq_params = [lsq_cd25, lsq_cd122, lsq_cd132, lsq_cd127]
+    dates = ["4-23", "4-26", "5-16"]
+    plates = ["1", "2"]
+
+    # calculate receptor counts
+    for _, cell in enumerate(cell_names):
+        for j, receptor in enumerate(receptors_):
+            for _, date in enumerate(dates):
+                for _, plate in enumerate(plates):
+                    data = df_signal.loc[(df_signal["Cell Type"] == cell) & (df_signal["Receptor"] == receptor) & (df_signal["Date"] == date) & (df_signal["Plate"] == plate)][channels_[j]]
+                    data = data[data >= 0]
+                    rec_counts = np.zeros(len(data))
+                    for k, signal in enumerate(data):
+                        A, B, C, D = lsq_params[j]
+                        rec_counts[k] = C * (((A - D) / (signal - D)) - 1)**(1 / B)
+                    df_add = pd.DataFrame({"Cell Type": np.tile(cell, len(data)), "Receptor": np.tile(receptor, len(data)),
+                                           "Count": rec_counts, "Date": np.tile(date, len(data)), "Plate": np.tile(plate, len(data))})
+                    df_rec = df_rec.append(df_add)
+    # write to csv
+    update_path = path_here + "/data/receptor_levels.csv"
+    df_rec.to_csv(str(update_path), index=False, header=True)
+
+    # calculate mean, variance, and skew for each replicate
+    df_stats = calculate_moments(df_rec, cell_names, receptors_)
+
+    # plots log10 of mean on
+    celltype_pointplot(ax1, df_stats, "Mean")
+
+    receptor_levels = df_rec
+    cell_types = ['T-reg']
+
+    for index, cell_type in enumerate(cell_types):
+
+        alphaLevels = receptor_levels.loc[(receptor_levels['Cell Type'] == cell_type) & (receptor_levels['Receptor'] == 'CD25')]
+        betaLevels = receptor_levels.loc[(receptor_levels['Cell Type'] == cell_type) & (receptor_levels['Receptor'] == 'CD122')]
+        gammaLevels = receptor_levels.loc[(receptor_levels['Cell Type'] == cell_type) & (receptor_levels['Receptor'] == 'CD132')]
+
+        alphaCounts = alphaLevels['Count'].reset_index(drop=True)
+        betaCounts = betaLevels['Count'].reset_index(drop=True)
+        d = {'alpha': alphaCounts, 'beta': betaCounts}
+        recepCounts = pd.DataFrame(data=d)
+        recepCounts = recepCounts.dropna()
+        recepCounts = recepCounts[(recepCounts[['alpha', 'beta']] != 0).all(axis=1)]
+
+        hex1 = ax2
+        hex1.hexbin(recepCounts['alpha'], recepCounts['beta'], xscale='log', yscale='log', mincnt=1, cmap='viridis')
+        hex1.set_xlabel('CD25 (IL2RA)')
+        hex1.set_ylabel('CD122(IL2RB)')
+        hex1.set_title(cell_type + ' Alpha-Beta correlation')
+
+        alphaCounts = alphaLevels['Count'].reset_index(drop=True)
+        gammaCounts = gammaLevels['Count'].reset_index(drop=True)
+        d2 = {'alpha': alphaCounts, 'gamma': gammaCounts}
+        recepCounts2 = pd.DataFrame(data=d2)
+        recepCounts2 = recepCounts2.dropna()
+        recepCounts2 = recepCounts2[(recepCounts2[['alpha', 'gamma']] != 0).all(axis=1)]
+
+        hex2 = ax3
+        hex2.hexbin(recepCounts2['alpha'], recepCounts2['gamma'], xscale='log', yscale='log', mincnt=1, cmap='viridis')
+        hex2.set_xlabel('CD25 (IL2RA)')
+        hex2.set_ylabel('CD132 (IL2RG)')
+        hex2.set_title(cell_type + ' Alpha-Gamma correlation')
 
     return
+
+
+def calculate_moments(df, cell_names, receptors):
+    """ Calculates mean, variance, and skew for each replicate. """
+    df_stats = pd.DataFrame(columns=["Cell Type", "Receptor", "Mean", "Variance", "Skew", "Date", "Plate"])
+    for _, cell in enumerate(cell_names):
+        for _, receptor in enumerate(receptors):
+            for _, date in enumerate(["4-23", "4-26", "5-16"]):
+                for _, plate in enumerate(["1", "2"]):
+                    df_subset = df.loc[(df["Cell Type"] == cell) & (df["Receptor"] == receptor) & (df["Date"] == date) & (df["Plate"] == plate)]["Count"]
+                    mean_ = np.log10(df_subset.mean())
+                    var_ = np.log10(df_subset.var())
+                    skew_ = np.log10(df_subset.skew())
+                    df_new = pd.DataFrame(columns=["Cell Type", "Receptor", "Mean", "Variance", "Skew", "Date", "Plate"])
+                    df_new.loc[0] = [cell, receptor, mean_, var_, skew_, date, plate]
+                    df_stats = df_stats.append(df_new)
+
+    return df_stats
+
+
+def celltype_pointplot(ax, df, moment):
+    """ Plots a given distribution moment with SD among replicates for all cell types and receptors. """
+    sns.pointplot(x="Cell Type", y=moment, hue="Receptor", data=df, ci='sd', join=False, dodge=True, ax=ax, estimator=sp.stats.gmean)
+    ax.set_ylabel("log(" + moment + ")")
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=25, rotation_mode="anchor", ha="right", position=(0, 0.02), fontsize=7.5)
+
+
+def run_regression():
+    """ Imports bead data and runs regression to get least squares parameters for conversion of signal to receptor count. """
+    sampleD, _ = importF2(path_here + "/data/flow/2019-04-23 Receptor Quant - Beads", "D")
+    sampleE, _ = importF2(path_here + "/data/flow/2019-04-23 Receptor Quant - Beads/", "E")
+    sampleF, _ = importF2(path_here + "/data/flow/2019-04-23 Receptor Quant - Beads/", "F")
+    sampleI, _ = importF2(path_here + "/data/flow/2019-05-16 Receptor Quant - Beads/", "F")
+
+    recQuant1 = np.array([0., 4407, 59840, 179953, 625180])  # CD25, CD122
+    recQuant2 = np.array([0., 7311, 44263, 161876, 269561])  # CD132
+    recQuant3 = np.array([4407, 59840, 179953, 625180, 0.0])  # CD127
+
+    _, lsq_cd25 = bead_regression(sampleD, channels['D'], recQuant1)
+    _, lsq_cd122 = bead_regression(sampleE, channels['E'], recQuant1, 2, True)
+    _, lsq_cd132 = bead_regression(sampleF, channels['F'], recQuant2)
+    _, lsq_cd127 = bead_regression(sampleI, channels["I"], recQuant3)
+
+    return lsq_cd25, lsq_cd122, lsq_cd132, lsq_cd127
